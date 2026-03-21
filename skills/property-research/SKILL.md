@@ -1,6 +1,6 @@
 ---
 name: property-research
-description: Research property ownership, appraisal values, and owner contact information for real estate properties. Use when the user asks about a property address, wants to find property details, owner information, or create organized research folders in Google Drive. Handles Travis County CAD (TCAD) lookups, owner contact searches, and Google Drive document creation with property photos. Uses scrapling with stealthy-fetch for all web scraping tasks to bypass anti-bot protections.
+description: Research property ownership, appraisal values, and owner contact information for real estate properties. Use when the user asks about a property address, wants to find property details, owner information, or create organized research folders in Google Drive. Handles Travis County CAD (TCAD) lookups, owner contact searches, and Google Drive document creation with property photos. Uses browser automation for React-powered sites like TCAD, and scrapling with stealthy-fetch for simpler sites with anti-bot protection.
 ---
 
 # Property Research
@@ -27,7 +27,7 @@ Property Address Folder/
 ```
 
 ### Step 3: Gather Property Data
-1. **Travis CAD (TCAD)**: Use **scrapling with stealth mode** to pull:
+1. **Travis CAD (TCAD)**: Use browser automation via OpenClaw's `browser` tool to pull data from the React-powered site:
    - Property ID
    - Owner name(s)
    - Appraisal values
@@ -38,7 +38,7 @@ Property Address Folder/
    - Deed instrument numbers
    - Warranty deed dates
    - Previous owners
-   - Use scrapling stealth mode for this site too
+   - May need browser automation for JavaScript-heavy interactions
 
 ### Step 4: Find Owner Contact Info
 - Search people-finder databases (NationalPublicData, FastBackgroundCheck, ThatsThem)
@@ -55,32 +55,45 @@ Property Address Folder/
 
 ### Scrapling (Stealth Mode for Web Scraping)
 ```python
-# Use Python with scrapling for stealthy web scraping
+# Use Python with scrapling for stealthy web scraping on sites with anti-bot protection
+# For JavaScript-heavy sites like TCAD, use browser automation instead
+
+# Basic stealthy fetch (for non-JS pages)
 python3 << 'EOF'
 from scrapling import StealthyFetcher
 fetcher = StealthyFetcher()
-response = fetcher.fetch("https://travis.prodigycad.com/property/[propId]")
-print(response.html)
+response = fetcher.fetch("https://example.com/non-js-page")
+print(response.html_content)
 EOF
 
 # Save HTML output to file
 python3 << 'EOF'
 from scrapling import StealthyFetcher
 fetcher = StealthyFetcher()
-response = fetcher.fetch("https://tccsearch.org")
+response = fetcher.fetch("https://example.com/page")
 with open("scraped.html", "w") as f:
-    f.write(response.html)
+    f.write(response.html_content)
 EOF
 
 # Use with XPath/CSS selectors to extract data
 python3 << 'EOF'
 from scrapling import StealthyFetcher, Selector
 fetcher = StealthyFetcher()
-response = fetcher.fetch("https://travis.prodigycad.com")
-sel = Selector(text=response.html)
+response = fetcher.fetch("https://example.com")
+sel = Selector(text=response.html_content)
 owner = sel.css(".owner-name").get()
 print(owner)
 EOF
+```
+
+### Browser Automation (JavaScript-heavy sites like TCAD)
+```bash
+# For sites that require JavaScript execution (like TCAD's React app)
+browser open "https://travis.prodigycad.com/property/[propId]"
+browser snapshot --fullPage
+
+# Screenshot saved to /home/landon/.openclaw/media/browser/
+# Upload to Drive as property photo
 ```
 
 ### Google Drive
@@ -111,18 +124,10 @@ gog docs write [docId] --file content.md
 gog docs find-replace [docId] "PLACEHOLDER_TEXT" --content-file image_markdown.md --format markdown
 ```
 
-### Browser (TCAD/Research) - Use Scrapling Stealth Mode
-```python
-# Use scrapling with stealthy-fetch for TCAD lookups
-# This bypasses anti-bot protections like Cloudflare
-python3 << 'EOF'
-from scrapling import StealthyFetcher
-fetcher = StealthyFetcher()
-response = fetcher.fetch("https://travis.prodigycad.com/property/[propId]")
-print(response.html)
-EOF
-
-# Or use the browser tool with stealth mode if needed
+### Browser (TCAD/Research) - Use Browser Automation for JavaScript-heavy Sites
+```bash
+# TCAD is a React-powered site that requires JavaScript execution
+# Use OpenClaw's browser tool for full page rendering
 browser open "https://travis.prodigycad.com/property/[propId]"
 browser snapshot --fullPage
 
@@ -160,7 +165,8 @@ Example: "Landon Ferguson Pflugerville TX phone"
 
 ## Notes
 
-- **ALWAYS use scrapling with `stealthy-fetch`** for web scraping instead of regular browser automation. This bypasses Cloudflare and other anti-bot protections.
+- **JavaScript-heavy sites (TCAD):** Use the `browser` tool for full page rendering. TCAD's React app requires JavaScript execution.
+- **Sites with anti-bot protection (non-JS):** Use scrapling with `stealthy-fetch` to bypass Cloudflare and similar protections.
 - Always check Drive first for existing research
 - Property IDs (PropID) are stable identifiers in TCAD
 - 2025 appraisal values are updated annually
