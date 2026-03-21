@@ -1,6 +1,6 @@
 ---
 name: property-research
-description: Research property ownership, appraisal values, and owner contact information for real estate properties. Use when the user asks about a property address, wants to find property details, owner information, or create organized research folders in Google Drive. Handles Travis County CAD (TCAD) lookups, owner contact searches, and Google Drive document creation with property photos. Uses browser automation for React-powered sites like TCAD, and scrapling with stealthy-fetch for simpler sites with anti-bot protection.
+description: Research property ownership, appraisal values, and owner contact information for real estate properties. Use when the user asks about a property address, wants to find property details, owner information, or create organized research folders in Google Drive. Handles Travis County CAD (TCAD) lookups, owner contact searches, comps analysis, and Google Drive document creation with property photos. Uses browser automation for React-powered sites like TCAD, and scrapling with stealthy-fetch for simpler sites with anti-bot protection. MUST follow comps selection guidelines: location (0.5-1 mile radius), time frame (3-6 months), size (within 20% of GLA), age/style (same era/design), condition, and uniformity (3-5 similar properties).
 ---
 
 # Property Research
@@ -45,13 +45,36 @@ Property Address Folder/
 - Collect: phone numbers, emails, DOB, relatives
 - Cross-reference to ensure correct person
 
-### Step 5: Create Owner Contact Document
+### Step 5: Find Comps (Comparables) - MUST FOLLOW THESE RULES
+1. **Location**: Homes within same neighborhood, typically 0.5-1 mile radius. Avoid major barriers (highways, rivers).
+2. **Time Frame**: Use sales from last 3-6 months (ideally 90 days) to reflect current market.
+3. **Size (GLA)**: Comps must be within 20% of subject property's square footage.
+4. **Age/Style**: Select homes built within same era with similar design (e.g., ranch vs. two-story).
+5. **Condition**: Factor in renovations, upgrades, and maintenance levels when evaluating value.
+6. **Status**: Prefer closed sales, but active/pending listings can show current competition.
+7. **Uniformity**: Aim for 3-5 similar properties for a strong value range.
+8. **Weighting**: Closer sales in time and distance are weighted more heavily.
+9. **Adjustments**: Make value adjustments for differences (e.g., garage, square footage, condition).
+
+### Step 6: Create Owner Contact Document
 - Create Google Doc via `gog docs create`
 - Insert Street View image via markdown: `![Photo](image.png)`
 - Write contact info using `gog docs write` or `gog docs find-replace`
 - Move to property folder via `gog drive move --parent [folderId]`
 
-## Key Commands
+### Key Guidelines for Selecting Comps
+
+| Guideline | Rule |
+|-----------|------|
+| **Location** | Same neighborhood, 0.5-1 mile radius. Avoid highways, rivers. |
+| **Time Frame** | Last 3-6 months (ideally 90 days) for current market. |
+| **Size (GLA)** | Within 20% of subject property's square footage. |
+| **Age/Style** | Same era and design (e.g., ranch vs. two-story). |
+| **Condition** | Factor in renovations, upgrades, maintenance. |
+| **Status** | Prefer closed sales; active/pending show competition. |
+| **Uniformity** | Aim for 3-5 similar properties. |
+| **Weighting** | Closer sales in time/distance weighted more heavily. |
+| **Adjustments** | Make value adjustments for differences (garage, sqft, condition). |
 
 ### Scrapling (Stealth Mode for Web Scraping)
 ```python
