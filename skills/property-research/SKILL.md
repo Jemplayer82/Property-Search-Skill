@@ -19,7 +19,7 @@ Research Texas property ownership, appraisal values, and owner contact informati
 ### Step 2: Create Drive Folder Structure
 ```
 Property Address Folder/
-├── TCAD_[PropertyID].pdf (TCAD page screenshot)
+├── TCAD_[PropertyID].pdf (TCAD page PDF printed from printer button)
 ├── Owner_Contact_Info.gdoc (Google Doc with photo)
 ├── Google_Maps_Street_View.png
 ├── Comps_Analysis.md (comparable properties)
@@ -32,7 +32,7 @@ Property Address Folder/
    - Owner name(s)
    - Appraisal values
    - Property details (sqft, year built, etc.)
-   - Screenshot saved as PDF
+   - **Print to PDF using the printer button** on TCAD's property page
 
 2. **Deed Search**: Check tccsearch.org (Travis County Clerk) for:
    - Deed instrument numbers
@@ -115,8 +115,8 @@ EOF
 browser open "https://travis.prodigycad.com/property/[propId]"
 browser snapshot --fullPage
 
-# Screenshot saved to /home/landon/.openclaw/media/browser/
-# Upload to Drive as property photo
+# Use TCAD's printer button to generate PDF of property page
+# Upload the PDF to Google Drive as TCAD_[PropertyID].pdf
 ```
 
 ### Google Drive
@@ -154,8 +154,8 @@ gog docs find-replace [docId] "PLACEHOLDER_TEXT" --content-file image_markdown.m
 browser open "https://travis.prodigycad.com/property/[propId]"
 browser snapshot --fullPage
 
-# Screenshot saved to /home/landon/.openclaw/media/browser/
-# Upload to Drive as property photo
+# Use TCAD's printer button to generate PDF of property page
+# Upload the PDF to Google Drive as TCAD_[PropertyID].pdf
 ```
 
 ## Owner Contact Lookup
@@ -188,7 +188,7 @@ Example: "Landon Ferguson Pflugerville TX phone"
 
 ## Notes
 
-- **JavaScript-heavy sites (TCAD):** Use the `browser` tool for full page rendering. TCAD's React app requires JavaScript execution.
+- **JavaScript-heavy sites (TCAD):** Use the `browser` tool for full page rendering. TCAD's React app requires JavaScript execution. **Always use the printer button on the TCAD page to generate a PDF**, not a screenshot.
 - **Sites with anti-bot protection (non-JS):** Use scrapling with `stealthy-fetch` to bypass Cloudflare and similar protections.
 - Always check Drive first for existing research
 - Property IDs (PropID) are stable identifiers in TCAD
