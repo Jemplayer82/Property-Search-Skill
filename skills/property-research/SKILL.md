@@ -1,275 +1,181 @@
 ---
 name: property-research
-description: Research property ownership, appraisal values, and owner contact information for real estate properties. Use when the user asks about a property address, wants to find property details, owner information, or create organized research folders in Google Drive. Handles Travis County CAD (TCAD) lookups, owner contact searches, comps analysis, and Google Drive document creation with property photos. Uses browser automation for React-powered sites like TCAD, and scrapling with stealthy-fetch for simpler sites with anti-bot protection. MUST follow comps selection guidelines: location (0.5-1 mile radius), time frame (3-6 months), size (within 20% of GLA), age/style (same era/design), condition, and uniformity (3-5 similar properties).
+description: Research Texas property ownership, appraisal values, and owner contact information. Use when the user asks about a property address, wants to find property details, owner information, or create organized research folders in Google Drive. Handles Travis County CAD (TCAD) lookups, owner contact searches, comps analysis, and Google Drive document creation with property photos.
 ---
 
 # Property Research
 
-## Overview
-
 Research Texas property ownership, appraisal values, and owner contact information. Creates organized Google Drive folders with property data, owner contact info, and street view photos. Currently optimized for Travis County (TCAD) but adaptable to other counties.
 
-## Workflow
+## Workflow Overview
 
-### Step 1: Check Existing Research
-- Search Google Drive for existing folder named after the property address
-- If folder exists, read all files (PDFs, MD, Docs) to gather existing data
-- Only proceed with new research if data is missing or outdated
+1. **Check Drive** - Search for existing folder by property address
+2. **TCAD Status Check** - Open travis.prodigycad.com and verify site is operational (not under maintenance)
+3. **TCAD Lookup** - Get property data from travis.prodigycad.com
+4. **Deed Search** - Check tccsearch.org for instrument history
+5. **Owner Contact** - Find phone/email via people-finder databases
+6. **Comps Analysis** - Pull comparable sales (3-5 properties, same area, 3-6 months)
+7. **Create Folder** - Organize all documents in Google Drive
+8. **Spell Check** - Review and correct all generated documents before finalizing
 
-### Step 1b: Scan for Print/PDF Options (CRITICAL)
-- **Always check for print/download buttons FIRST** before doing any data entry
-- TCAD: Look for printer icon/button - use it to generate PDF
-- tccsearch.org: Look for print/download options for deed records
-- Any other official site with PDF generation should be used immediately
-- If no print option available, then proceed with browser automation/screenshot
+## Communication Requirements
 
-### Step 2: Create Drive Folder Structure
+**Send status update at the start of each section:**
+- "Starting [Section Name]..."
+- Brief context of what this step does
+
+**Notify immediately on failure:**
+- If a step fails or is blocked, report it right away
+- Explain what failed and why
+- Offer alternatives or next steps
+- Do not proceed silently past failures without user awareness
+
+## Quick Reference
+
+### File Naming
 ```
 Property Address Folder/
-├── 3516_Winding_Shore_Lane_Property_Report.pdf (Comprehensive PDF report)
-├── TCAD_[PropertyID].pdf (Printer button PDF - PRIMARY DATA SOURCE)
-├── Deed_Records.pdf (tccsearch.org print/download if available)
-├── Owner_Contact_Info.gdoc (Google Doc with photo)
-├── Google_Maps_Street_View.png
-├── Comps_Analysis.md (comparable properties)
-└── Deed_Records.md (from tccsearch.org if PDF not available)
+├── [Address]_Property_Report.pdf    # Comprehensive PDF report
+├── TCAD_[PropID].pdf                # TCAD print/download (PRIMARY)
+├── Owner_Contact_Info.gdoc           # Contact info with photo
+├── Google_Maps_Street_View.png       # Street view image
+└── Comps_Analysis.md                 # Comparable properties
 ```
 
-### Step 2b: Create Comprehensive PDF Report
-- Generate a single PDF report combining all research data
-- **First page:** Title, street view + map view images stacked, Google Maps and Apple Maps buttons
-- **Second page:** All property details, owner info, appraisal values, deed history, comps analysis
-- **PDF structure:**
-  - Title page (h1 + h2)
-  - Property location image (street view on top, map view below)
-  - Google Maps and Apple Maps buttons
-  - Summary date block
-  - PROPERTY DETAILS table
-  - OWNER INFORMATION section
-  - PROPERTY CHARACTERISTICS section
-  - APPRASAL VALUES (2025) table
-  - VALUE HISTORY table
-  - TAXING UNITS table
-  - DEED HISTORY table
-  - COMPARABLE PROPERTIES ANALYSIS section
-  - GOOGLE DRIVE FOLDER link
-  - SOURCES list
-  - NOTES section
-  - Footer with generation note
-- **Key formatting rules:**
-  - No page breaks between headers and their content
-  - Headers use `page-break-after: avoid`
-  - Content sections use `page-break-inside: avoid`
-  - Image fits on page with `max-height: 10in` and `object-fit: contain`
+### CAD Document Download (CRITICAL - DO NOT SKIP)
 
-### Step 3: Gather Property Data
-1. **Travis CAD (TCAD)**: Use browser automation via OpenClaw's `browser` tool to pull data from the React-powered site:
-   - Property ID
-   - Owner name(s)
-   - Appraisal values
-   - Property details (sqft, year built, etc.)
-   - **PRINT TO PDF**: Always check for and use TCAD's printer button to generate a PDF of the property page. This is your primary method for capturing official property data. Upload this PDF as `TCAD_[PropertyID].pdf` to Google Drive.
+**⚠️ NEVER rely solely on scraped webpage data. Always get the official CAD PDF document.**
 
-2. **Deed Search**: Check tccsearch.org (Travis County Clerk) for:
-   - Deed instrument numbers
-   - Warranty deed dates
-   - Previous owners
-   - **PRINT TO PDF**: If tccsearch.org offers a print or download option, use it to capture deed records
-   - May need browser automation for JavaScript-heavy interactions
+The official PDF contains complete property records including:
+- All property details and characteristics
+- Complete value history
+- Full deed history
+- Building/land breakdowns
+- Taxing jurisdictions
+- Legal descriptions
 
-### Step 4: Find Owner Contact Info
-- Search people-finder databases (NationalPublicData, FastBackgroundCheck, ThatsThem)
-- Collect: phone numbers, emails, DOB, relatives
-- Cross-reference to ensure correct person
+#### For TCAD (Travis County):
+1. Open https://travis.prodigycad.com/property-search
+2. **Check for maintenance message** - If site shows "under maintenance", try again later
+3. Search for property and click PropID for detail page
+4. **Click printer icon** (top-right corner of page)
+5. Select "Print" and save as PDF
+6. **Verify PDF downloaded** - check file size is reasonable (>50KB)
+7. Upload to Drive as `TCAD_[PropID].pdf`
 
-### Step 5: Find Comps (Comparables) - MUST FOLLOW THESE RULES
-1. **Location**: Homes within same neighborhood, typically 0.5-1 mile radius. Avoid major barriers (highways, rivers).
-2. **Time Frame**: Use sales from last 3-6 months (ideally 90 days) to reflect current market.
-3. **Size (GLA)**: Comps must be within 20% of subject property's square footage.
-4. **Age/Style**: Select homes built within same era with similar design (e.g., ranch vs. two-story).
-5. **Condition**: Factor in renovations, upgrades, and maintenance levels when evaluating value.
-6. **Status**: Prefer closed sales, but active/pending listings can show current competition.
-7. **Uniformity**: Aim for 3-5 similar properties for a strong value range.
-8. **Weighting**: Closer sales in time and distance are weighted more heavily.
-9. **Adjustments**: Make value adjustments for differences (e.g., garage, square footage, condition).
+#### For Hays CAD (Hays County):
+1. Open https://esearch.hayscad.com/
+2. Search for property
+3. Click on Quick Ref ID to view details
+4. **Click "Print" button → select "Print Detailed View"**
+5. Save as PDF - this contains ALL property data
+6. Upload to Drive as `HaysCAD_[QuickRefID].pdf`
 
-### Step 6: Create Owner Contact Document
-- Create Google Doc via `gog docs create`
-- Insert Street View image via markdown: `![Photo](image.png)`
-- Write contact info using `gog docs write` or `gog docs find-replace`
-- Move to property folder via `gog drive move --parent [folderId]`
+**Note:** The "Appraisal Notice" link downloads a different document (summary only). Use "Print Detailed View" for complete records.
 
-### Step 7: Create Comprehensive PDF Report
-Use Python with WeasyPrint to generate a professional PDF report:
+### Document Verification Checklist
 
-```python
-#!/usr/bin/env python3
-"""
-Create a comprehensive PDF property research report.
-"""
+Before proceeding, verify you have:
+- [ ] Official PDF downloaded and saved
+- [ ] File size >50KB (ensures complete document)
+- [ ] PDF opens and displays property data
+- [ ] PDF uploaded to Google Drive
+- [ ] All sections visible (Property Details, Values, Deed History, etc.)
 
-from docx import Document
-from docx.shared import Inches, Pt
-from weasyprint import HTML
+### ⚠️ Common Mistakes to Avoid
 
-# Generate HTML with base64-encoded images
-# Use CSS for page breaks to keep headers with content
-# Images: street_view_page.jpg (top), map_page.jpg (bottom)
-# Buttons: Google Maps and Apple Maps links
+**DON'T:**
+- Scrape individual fields from the webpage and skip the PDF
+- Use only the "Appraisal Notice" summary (may be incomplete)
+- Assume data from webpage search results is sufficient
 
-# HTML structure:
-# - Title page (h1 + h2)
-# - Property location image (street view + map stacked)
-# - Google Maps and Apple Maps buttons
-# - All property data tables and sections
-# - No page breaks between headers and content
+**DO:**
+- Always get the full detailed print view
+- Verify PDF contains all sections before closing browser
+- Use the PDF as the primary data source for the report
 
-# Generate PDF
-HTML('/tmp/property_report_base64.html').write_pdf('/home/landon/.openclaw/workspace/Property_Report.pdf')
+### Handling CAD Maintenance
 
-# Upload to Google Drive
-gog drive upload Property_Report.pdf --parent [folderId]
-```
+If CAD site is under maintenance:
+- Document the maintenance status in research notes
+- Try again later (usually resolved within hours)
+- Consider using cached/previous year data if available
 
-### Key Guidelines for Selecting Comps
+### Owner Contact Sources
+- NationalPublicData.com
+- FastBackgroundCheck.com
+- ThatsThem.com
 
+Search pattern: `[FirstName] [LastName] [City] [State] phone`
+
+### Comps Selection Rules
 | Guideline | Rule |
 |-----------|------|
-| **Location** | Same neighborhood, 0.5-1 mile radius. Avoid highways, rivers. |
-| **Time Frame** | Last 3-6 months (ideally 90 days) for current market. |
-| **Size (GLA)** | Within 20% of subject property's square footage. |
-| **Age/Style** | Same era and design (e.g., ranch vs. two-story). |
-| **Condition** | Factor in renovations, upgrades, maintenance. |
-| **Status** | Prefer closed sales; active/pending show competition. |
-| **Uniformity** | Aim for 3-5 similar properties. |
-| **Weighting** | Closer sales in time/distance weighted more heavily. |
-| **Adjustments** | Make value adjustments for differences (garage, sqft, condition). |
+| Location | Same neighborhood, 0.5-1 mile radius |
+| Time | Last 3-6 months (90 days ideal) |
+| Size | Within 20% of subject GLA |
+| Age/Style | Same era and design |
+| Uniformity | 3-5 similar properties |
 
-### Scrapling (Stealth Mode for Web Scraping)
-```python
-# Use Python with scrapling for stealthy web scraping on sites with anti-bot protection
-# For JavaScript-heavy sites like TCAD, use browser automation instead
+## Tools & Commands
 
-# Basic stealthy fetch (for non-JS pages)
-python3 << 'EOF'
-from scrapling import StealthyFetcher
-fetcher = StealthyFetcher()
-response = fetcher.fetch("https://example.com/non-js-page")
-print(response.html_content)
-EOF
-
-# Save HTML output to file
-python3 << 'EOF'
-from scrapling import StealthyFetcher
-fetcher = StealthyFetcher()
-response = fetcher.fetch("https://example.com/page")
-with open("scraped.html", "w") as f:
-    f.write(response.html_content)
-EOF
-
-# Use with XPath/CSS selectors to extract data
-python3 << 'EOF'
-from scrapling import StealthyFetcher, Selector
-fetcher = StealthyFetcher()
-response = fetcher.fetch("https://example.com")
-sel = Selector(text=response.html_content)
-owner = sel.css(".owner-name").get()
-print(owner)
-EOF
-```
-
-### Browser Automation (JavaScript-heavy sites like TCAD)
+### Browser Automation (TCAD/tccsearch.org)
 ```bash
-# For sites that require JavaScript execution (like TCAD's React app)
+# TCAD requires JavaScript - use browser tool
 browser open "https://travis.prodigycad.com/property/[propId]"
 browser snapshot --fullPage
 
-# Use TCAD's printer button to generate PDF of property page
-# Upload the PDF to Google Drive as TCAD_[PropertyID].pdf
+# IMPORTANT: Click print button to generate PDF
+# Upload TCAD_[PropID].pdf to Drive
+```
+
+### Scrapling (Stealth for anti-bot sites)
+```python
+from scrapling import StealthyFetcher
+fetcher = StealthyFetcher()
+response = fetcher.fetch("https://example.com")
+print(response.html_content)
 ```
 
 ### Google Drive
 ```bash
-# Search for existing folder
+# Search existing folder
 gog drive search "Property Address" --json
 
 # Create folder
 gog drive folder-create "3524 Winding Shore Lane" --parent [parentId]
 
-# Upload file
+# Upload
 gog drive upload file.pdf --parent [folderId]
-
-# Move file to folder
-gog drive move [fileId] --parent [folderId]
 ```
 
-### Google Docs
+### Owner Contact Script
 ```bash
-# Create doc
-gog docs create "Owner Contact Info" --json
-
-# Write content from markdown file
-gog docs write [docId] --file content.md
-
-# Insert image (use markdown format)
-# Create image_markdown.md: ![Photo](street_view.png)
-gog docs find-replace [docId] "PLACEHOLDER_TEXT" --content-file image_markdown.md --format markdown
+python3 scripts/owner_contact.py "Owner Name" --address "Property Address" --prop-id [PropID] --output owner.md
 ```
 
-### Browser (TCAD/Research) - Use Browser Automation for JavaScript-heavy Sites
+### PDF Report Generation
 ```bash
-# TCAD is a React-powered site that requires JavaScript execution
-# Use OpenClaw's browser tool for full page rendering
-browser open "https://travis.prodigycad.com/property/[propId]"
-browser snapshot --fullPage
-
-# Use TCAD's printer button to generate PDF of property page
-# Upload the PDF to Google Drive as TCAD_[PropertyID].pdf
+python3 scripts/generate_report.py \
+  --address "3524 Winding Shore Lane, Pflugerville, TX" \
+  --prop-id 550733 \
+  --owner1 "Landon Ferguson" \
+  --total-value "$461,373" \
+  --street-view street_view.jpg \
+  --map-view map_view.jpg \
+  --output Property_Report.pdf
 ```
 
-## Owner Contact Lookup
+## Detailed Guides
 
-### Reliable Sources
-1. **NationalPublicData.com** - Phone, addresses, relatives
-2. **FastBackgroundCheck.com** - Contact info, background
-3. **ThatsThem.com** - Multiple phone numbers, emails
-4. **WhitePages** (if available via web_search)
+- **TCAD Navigation**: See [references/tcad-guide.md](references/tcad-guide.md)
+- **tccsearch.org Workflow**: See references/tcad-guide.md (deed search section)
 
-### Search Pattern
-```
-Search: [FirstName] [LastName] [City] [State] phone
-Example: "Landon Ferguson Pflugerville TX phone"
+## Cleanup
+
+**Always close browser when done:**
+```bash
+browser stop
 ```
 
-### Data Points to Collect
-- Full name (with middle initial if available)
-- Phone numbers (mobile, landline)
-- Email addresses
-- Date of birth (age)
-- Current/past addresses
-- Relatives (for cross-verification)
-
-## References
-
-- [TCAD Website](https://travis.prodigycad.com)
-- [Travis County Clerk](https://tccsearch.org)
-- [Google Maps](https://maps.google.com) - Street view photos
-- [WeasyPrint](https://weasyprint.org) - PDF generation with CSS page breaks
-- [python-docx](https://python-docx.readthedocs.io) - Word document generation
-
-## Notes
-
-- **ALWAYS PRINT TO PDF WHEN AVAILABLE**: Before doing anything else on property research sites, check if they offer a print or download button. Use it to capture official records. This includes:
-  - TCAD's printer button (primary method)
-  - tccsearch.org print/download options for deed records
-  - Any other official property data sites that offer PDF generation
-
-- **JavaScript-heavy sites (TCAD):** Use the `browser` tool for full page rendering. TCAD's React app requires JavaScript execution. **Always use the printer button on the TCAD page to generate a PDF**, not a screenshot.
-
-- **Sites with anti-bot protection (non-JS):** Use scrapling with `stealthy-fetch` to bypass Cloudflare and similar protections.
-
-- Always check Drive first for existing research
-- Property IDs (PropID) are stable identifiers in TCAD
-- 2025 appraisal values are updated annually
-- Street View images may be outdated
-- Owner contact info from public records - verify before use
+This prevents session conflicts and releases resources.

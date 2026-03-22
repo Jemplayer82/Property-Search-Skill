@@ -20,6 +20,11 @@ This file records long-term insights and decisions. Update as you go.
 - Deed search via tccsearch.org (Travis County Clerk)
 
 ## Projects
+- Property research skill created in `~/.openclaw/workspace/skills/property-research/`
+  - SKILL.md with workflow documentation
+  - scripts/owner_contact.py for contact document generation
+  - scripts/generate_report.py for PDF report generation  
+  - references/tcad-guide.md for detailed TCAD/tccsearch.org workflow
 - Working on property research for Pflugerville TX properties (Park at Blackhawk area)
 - First property researched: 3520 Winding Shore Lane, Pflugerville TX 78660
   - Owner: Ferguson Landon & Jennifer
