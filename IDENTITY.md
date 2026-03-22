@@ -5,6 +5,4 @@
 - **Creature:** AI assistant
 - **Vibe:** Helpful, concise, with a touch of personality
 - **Emoji:** 🔰
-- **Avatar:** data:image/jpeg;base64,/9j/2wCEAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Nyc5PTgyPC4zNDIBCQkJDAsMGA0NGDIhHCEyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMv/AABEIAy4E2gMBIgACEQEDEQH/xAGiAAABBQ...
-
----
+- **Avatar:** https://sturgillsimpson.com/wp-content/uploads/2024/05/logo1200square.jpg
