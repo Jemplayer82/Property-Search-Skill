@@ -66,26 +66,47 @@ The official PDF contains complete property records including:
 - Taxing jurisdictions
 - Legal descriptions
 
-#### For TCAD (Travis County):
+#### For ANY CAD Website - Print Full Detail View PDF
+
+**IMPORTANT - Use system print-to-PDF for complete documents:**
+- Many CAD sites use dynamic JavaScript menus that prevent direct PDF downloads
+- Browser automation cannot trigger system print dialogs
+- **Use Chrome headless mode to generate proper printouts**
+
+```bash
+google-chrome --headless --print-to-pdf="/path/to/output.pdf" --no-sandbox "https://target-site.com/property-url" 2>&1
+```
+
+**For TCAD (Travis County):**
 1. **Run pre-check first**: `web_fetch url="https://travis.prodigycad.com"`
-2. **Only if pre-check passes**, open https://travis.prodigycad.com/property-search
-3. **Check for maintenance message** - If site shows "under maintenance", try again later
-3. Search for property and click PropID for detail page
-4. **Click printer icon** (top-right corner of page)
-5. Select "Print" and save as PDF
-6. **Verify PDF downloaded** - check file size is reasonable (>50KB)
-7. Upload to Drive as `TCAD_[PropID].pdf`
+2. **Only if pre-check passes**, open property page: `https://travis.prodigycad.com/property/[propId]`
+3. **Print using Chrome headless** (full detail view includes all sections):
+```bash
+google-chrome --headless --print-to-pdf="TCAD_[PropID].pdf" --no-sandbox "https://travis.prodigycad.com/property/[propId]" 2>&1
+```
+4. **Verify PDF downloaded** - check file size is reasonable (>50KB)
+5. Upload to Drive as `TCAD_[PropID].pdf`
 
-#### For Hays CAD (Hays County):
+**For Hays CAD (Hays County):**
 1. **Run pre-check first**: `web_fetch url="https://esearch.hayscad.com"`
-2. **Only if pre-check passes**, open https://esearch.hayscad.com/
-2. Search for property
-3. Click on Quick Ref ID to view details
-4. **Click "Print" button → select "Print Detailed View"**
-5. Save as PDF - this contains ALL property data
-6. Upload to Drive as `HaysCAD_[QuickRefID].pdf`
+2. **Only if pre-check passes**, open property page: `https://esearch.hayscad.com/Property/View/[QuickRefID]?year=2025&ownerId=[OwnerID]`
+3. **Print using Chrome headless** (full detail view includes all sections):
+```bash
+google-chrome --headless --print-to-pdf="HaysCAD_[QuickRefID].pdf" --no-sandbox "https://esearch.hayscad.com/Property/View/[QuickRefID]?year=2025&ownerId=[OwnerID]" 2>&1
+```
+4. **Verify PDF downloaded** - check file size is reasonable (>50KB)
+5. Upload to Drive as `HaysCAD_[QuickRefID].pdf`
 
-**Note:** The "Appraisal Notice" link downloads a different document (summary only). Use "Print Detailed View" for complete records.
+**For ANY other CAD website:**
+1. **Run pre-check first**: `web_fetch url="https://target-cad-site.com"`
+2. **Open the property detail page URL in Chrome headless**:
+```bash
+google-chrome --headless --print-to-pdf="CAD_[Site]_[ID].pdf" --no-sandbox "https://target-cad-site.com/property/[specificPath]" 2>&1
+```
+3. **Verify PDF downloaded** - check file size is reasonable (>50KB)
+4. Upload to Drive as `CAD_[Site]_[ID].pdf`
+
+**Note:** The "Appraisal Notice" or similar summary links download incomplete documents. Always use Chrome headless print-to-PDF for the complete detailed view.
 
 ### Document Verification Checklist
 
@@ -135,6 +156,22 @@ web_fetch url="https://target-site.com" extractMode="text"
 - Report: "[Site] is under maintenance - cannot proceed"
 - Suggest trying again later or using alternative method
 
+### Downloading Documents from ANY Website Using Chrome Headless
+
+When a website requires full-page PDF downloads but doesn't provide direct download links:
+1. Open the target URL in Chrome headless mode
+2. Use `--print-to-pdf` flag to save as PDF
+
+```bash
+google-chrome --headless --print-to-pdf="/path/to/output.pdf" --no-sandbox "https://target-website.com/page" 2>&1
+```
+
+**Requirements:**
+- Google Chrome must be installed
+- The `--no-sandbox` flag is required for headless mode
+- Output path should be an absolute path
+- Check exit code and file size to verify success
+
 ### Owner Contact Sources
 - NationalPublicData.com
 - FastBackgroundCheck.com
@@ -153,13 +190,19 @@ Search pattern: `[FirstName] [LastName] [City] [State] phone`
 
 ## Tools & Commands
 
+### Downloading Documents from ANY Website (Generic)
+```bash
+# Chrome headless print-to-PDF (works for any website)
+google-chrome --headless --print-to-pdf="/path/to/output.pdf" --no-sandbox "https://target-site.com/page" 2>&1
+```
+
 ### Browser Automation (TCAD/tccsearch.org)
 ```bash
 # TCAD requires JavaScript - use browser tool
 browser open "https://travis.prodigycad.com/property/[propId]"
 browser snapshot --fullPage
 
-# IMPORTANT: Click print button to generate PDF
+# IMPORTANT: Chrome headless is preferred for PDF downloads (captures full detail view)
 # Upload TCAD_[PropID].pdf to Drive
 ```
 
@@ -183,6 +226,9 @@ gog drive folder-create "3524 Winding Shore Lane" --parent [parentId]
 
 # Upload
 gog drive upload file.pdf --parent [folderId]
+
+# Get folder ID for upload
+gog drive search "Folder Name" --json
 ```
 
 ### Owner Contact Script
