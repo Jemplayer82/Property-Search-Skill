@@ -9,8 +9,12 @@ Research Texas property ownership, appraisal values, and owner contact informati
 
 ## Workflow Overview
 
-**PRE-CHECK (ALWAYS RUN FIRST):**
-1. **Site Status Check** - Verify CAD site responds with HTTP 200 and is NOT on maintenance page before starting automation
+**PRE-CHECK (ALWAYS RUN FIRST for ANY website):**
+1. **Site Status Check** - Run `web_fetch` on target URL to verify:
+   - HTTP 200 status (implied if fetch succeeds)
+   - NO maintenance/error message in response
+   - Site is actually responsive
+2. **Only then proceed** with browser automation or data extraction
 
 2. **Check Drive** - Search for existing folder by property address
 3. **TCAD Status Check** - Open travis.prodigycad.com and verify site is operational (not under maintenance)
@@ -32,6 +36,11 @@ Research Texas property ownership, appraisal values, and owner contact informati
 - Explain what failed and why
 - Offer alternatives or next steps
 - Do not proceed silently past failures without user awareness
+
+**IMPORTANT - Site Status Check Required:**
+- For ANY new website (TCAD, tccsearch.org, people-finders, etc.): ALWAYS run `web_fetch` first
+- If site is down/maintenance: STOP and report immediately
+- Do NOT start browser automation without verifying site responsiveness
 
 ## Quick Reference
 
@@ -58,8 +67,9 @@ The official PDF contains complete property records including:
 - Legal descriptions
 
 #### For TCAD (Travis County):
-1. Open https://travis.prodigycad.com/property-search
-2. **Check for maintenance message** - If site shows "under maintenance", try again later
+1. **Run pre-check first**: `web_fetch url="https://travis.prodigycad.com"`
+2. **Only if pre-check passes**, open https://travis.prodigycad.com/property-search
+3. **Check for maintenance message** - If site shows "under maintenance", try again later
 3. Search for property and click PropID for detail page
 4. **Click printer icon** (top-right corner of page)
 5. Select "Print" and save as PDF
@@ -67,7 +77,8 @@ The official PDF contains complete property records including:
 7. Upload to Drive as `TCAD_[PropID].pdf`
 
 #### For Hays CAD (Hays County):
-1. Open https://esearch.hayscad.com/
+1. **Run pre-check first**: `web_fetch url="https://esearch.hayscad.com"`
+2. **Only if pre-check passes**, open https://esearch.hayscad.com/
 2. Search for property
 3. Click on Quick Ref ID to view details
 4. **Click "Print" button → select "Print Detailed View"**
@@ -106,23 +117,23 @@ If CAD site is under maintenance:
 - Try again later (usually resolved within hours)
 - Consider using cached/previous year data if available
 
-### Pre-Check: Verify CAD Site Before Automation
+### Pre-Check: Verify ANY Site Before Automation
 
-**ALWAYS run this before starting browser automation:**
+**ALWAYS run this before starting browser automation on a new website:**
 
 ```bash
-web_fetch url="https://travis.prodigycad.com" extractMode="text"
+web_fetch url="https://target-site.com" extractMode="text"
 ```
 
 **Check for:**
 - HTTP 200 status (implied if fetch succeeds)
-- NO "under maintenance" message in response
-- Normal page title (e.g., "Public Portal")
+- NO "under maintenance" or error message in response
+- Normal page title/content
 
-**If maintenance page detected:**
+**If site is down/maintenance:**
 - STOP automation immediately
-- Report: "TCAD is under maintenance - cannot proceed with property lookup"
-- Suggest trying again in 1-4 hours
+- Report: "[Site] is under maintenance - cannot proceed"
+- Suggest trying again later or using alternative method
 
 ### Owner Contact Sources
 - NationalPublicData.com
@@ -156,6 +167,8 @@ browser snapshot --fullPage
 ```python
 from scrapling import StealthyFetcher
 fetcher = StealthyFetcher()
+# First verify site is up with web_fetch before using scrapling
+# web_fetch url="https://target-site.com"
 response = fetcher.fetch("https://example.com")
 print(response.html_content)
 ```
