@@ -7,6 +7,7 @@ Requires: weasyprint, pillow
 import argparse
 import base64
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -20,6 +21,43 @@ try:
     from PIL import Image
 except ImportError:
     print("Warning: pillow not installed. Image conversion may fail.")
+
+try:
+    from spellchecker import SpellChecker
+    _spell = SpellChecker()
+    # Domain-specific words that are correct but unknown to the dictionary
+    _spell.word_frequency.load_words([
+        "condo", "hoa", "sqft", "cad", "tcad", "hayscad", "pflugerville",
+        "kyle", "buda", "hays", "travis", "gwd", "meak", "redfin", "zillow",
+        "appraised", "appraisal", "homesite", "non-homesite", "warrantee",
+        "grantor", "grantee", "lp", "llc", "escarpment", "winding", "bobolink",
+        "kingfisher", "collared", "kookaburra", "meadows", "blackhawk",
+        "comps", "comp", "openclaw",
+    ])
+    SPELL_AVAILABLE = True
+except ImportError:
+    SPELL_AVAILABLE = False
+
+
+def spellcheck_text(text, label=""):
+    """Check text for misspellings. Returns corrected text and prints warnings."""
+    if not SPELL_AVAILABLE or not text:
+        return text
+    words = re.findall(r"[a-zA-Z']+", text)
+    # Skip all-caps (abbreviations) and short words; check everything else lowercased
+    candidates = [w.lower() for w in words if not w.isupper() and len(w) > 3]
+    misspelled = _spell.unknown(candidates)
+    if not misspelled:
+        return text
+    corrected = text
+    for word in misspelled:
+        fix = _spell.correction(word)
+        if fix and fix != word:
+            print(f"  Spell check [{label}]: '{word}' → '{fix}'")
+            corrected = re.sub(r'\b' + re.escape(word) + r'\b', fix, corrected)
+        else:
+            print(f"  Spell check [{label}]: unknown word '{word}' (no suggestion)")
+    return corrected
 
 
 def image_to_base64(image_path):
@@ -486,6 +524,14 @@ def main():
     map_view = image_to_base64(args.map_view) if args.map_view else None
     street_view = image_to_base64(args.street_view) if args.street_view else None
     comps = json.loads(Path(args.comps_file).read_text()) if args.comps_file else None
+
+    # Spell check free-text fields before rendering
+    print("Running spell check...")
+    data['notes'] = spellcheck_text(data.get('notes', ''), 'notes')
+    if comps:
+        for c in comps.get('comps', []):
+            c['notes'] = spellcheck_text(c.get('notes', ''), f"comp:{c.get('address','')}")
+    print("Spell check complete.")
 
     html_content = generate_html_report(data, map_view, street_view, comps)
     HTML(string=html_content).write_pdf(args.output)
