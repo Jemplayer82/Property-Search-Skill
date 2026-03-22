@@ -26,6 +26,7 @@ Research Texas property ownership, appraisal values, and owner contact informati
 ### Step 2: Create Drive Folder Structure
 ```
 Property Address Folder/
+├── 3516_Winding_Shore_Lane_Property_Report.pdf (Comprehensive PDF report)
 ├── TCAD_[PropertyID].pdf (Printer button PDF - PRIMARY DATA SOURCE)
 ├── Deed_Records.pdf (tccsearch.org print/download if available)
 ├── Owner_Contact_Info.gdoc (Google Doc with photo)
@@ -33,6 +34,33 @@ Property Address Folder/
 ├── Comps_Analysis.md (comparable properties)
 └── Deed_Records.md (from tccsearch.org if PDF not available)
 ```
+
+### Step 2b: Create Comprehensive PDF Report
+- Generate a single PDF report combining all research data
+- **First page:** Title, street view + map view images stacked, Google Maps and Apple Maps buttons
+- **Second page:** All property details, owner info, appraisal values, deed history, comps analysis
+- **PDF structure:**
+  - Title page (h1 + h2)
+  - Property location image (street view on top, map view below)
+  - Google Maps and Apple Maps buttons
+  - Summary date block
+  - PROPERTY DETAILS table
+  - OWNER INFORMATION section
+  - PROPERTY CHARACTERISTICS section
+  - APPRASAL VALUES (2025) table
+  - VALUE HISTORY table
+  - TAXING UNITS table
+  - DEED HISTORY table
+  - COMPARABLE PROPERTIES ANALYSIS section
+  - GOOGLE DRIVE FOLDER link
+  - SOURCES list
+  - NOTES section
+  - Footer with generation note
+- **Key formatting rules:**
+  - No page breaks between headers and their content
+  - Headers use `page-break-after: avoid`
+  - Content sections use `page-break-inside: avoid`
+  - Image fits on page with `max-height: 10in` and `object-fit: contain`
 
 ### Step 3: Gather Property Data
 1. **Travis CAD (TCAD)**: Use browser automation via OpenClaw's `browser` tool to pull data from the React-powered site:
@@ -70,6 +98,38 @@ Property Address Folder/
 - Insert Street View image via markdown: `![Photo](image.png)`
 - Write contact info using `gog docs write` or `gog docs find-replace`
 - Move to property folder via `gog drive move --parent [folderId]`
+
+### Step 7: Create Comprehensive PDF Report
+Use Python with WeasyPrint to generate a professional PDF report:
+
+```python
+#!/usr/bin/env python3
+"""
+Create a comprehensive PDF property research report.
+"""
+
+from docx import Document
+from docx.shared import Inches, Pt
+from weasyprint import HTML
+
+# Generate HTML with base64-encoded images
+# Use CSS for page breaks to keep headers with content
+# Images: street_view_page.jpg (top), map_page.jpg (bottom)
+# Buttons: Google Maps and Apple Maps links
+
+# HTML structure:
+# - Title page (h1 + h2)
+# - Property location image (street view + map stacked)
+# - Google Maps and Apple Maps buttons
+# - All property data tables and sections
+# - No page breaks between headers and content
+
+# Generate PDF
+HTML('/tmp/property_report_base64.html').write_pdf('/home/landon/.openclaw/workspace/Property_Report.pdf')
+
+# Upload to Google Drive
+gog drive upload Property_Report.pdf --parent [folderId]
+```
 
 ### Key Guidelines for Selecting Comps
 
@@ -194,6 +254,8 @@ Example: "Landon Ferguson Pflugerville TX phone"
 - [TCAD Website](https://travis.prodigycad.com)
 - [Travis County Clerk](https://tccsearch.org)
 - [Google Maps](https://maps.google.com) - Street view photos
+- [WeasyPrint](https://weasyprint.org) - PDF generation with CSS page breaks
+- [python-docx](https://python-docx.readthedocs.io) - Word document generation
 
 ## Notes
 
