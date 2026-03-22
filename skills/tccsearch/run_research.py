@@ -12,8 +12,11 @@ Runs:
 
 If --drive-parent is given, a subfolder named after the address is auto-created.
 If --drive-folder is given, files are uploaded directly to that folder.
+
+Temp files are written to a dedicated working directory and cleaned up after
+all uploads complete.
 """
-import argparse, os, subprocess, sys
+import argparse, os, shutil, subprocess, sys, tempfile
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -51,7 +54,6 @@ def main():
     parser.add_argument("--skip-deeds", action="store_true")
     parser.add_argument("--skip-tcad", action="store_true")
     parser.add_argument("--skip-owner", action="store_true")
-    parser.add_argument("--out-dir", default="/tmp")
     args = parser.parse_args()
 
     if not args.drive_folder and not args.drive_parent:
@@ -63,34 +65,46 @@ def main():
         print(f"  Folder ID: {args.drive_folder}")
         print(f"  https://drive.google.com/drive/folders/{args.drive_folder}")
 
+    # Create a clean working directory for this run
+    slug = args.address.replace(" ", "_").replace(",", "")[:40]
+    work_dir = tempfile.mkdtemp(prefix=f"openclaw_{slug}_")
+    print(f"\nWorking directory: {work_dir}")
+
     # Street-only for deed search (no city/state)
     street = " ".join(args.address.split()[:4])
 
     results = {}
 
-    if not args.skip_tcad:
-        tcad_args = [args.address, "--drive-folder", args.drive_folder, "--out-dir", args.out_dir]
-        if args.pid:
-            tcad_args += ["--pid", args.pid]
-        results["tcad"] = run("tcad_lookup.py", tcad_args)
+    try:
+        if not args.skip_tcad:
+            tcad_args = [args.address, "--drive-folder", args.drive_folder, "--out-dir", work_dir]
+            if args.pid:
+                tcad_args += ["--pid", args.pid]
+            results["tcad"] = run("tcad_lookup.py", tcad_args)
 
-    if not args.skip_deeds:
-        deed_args = [street, "--drive-folder", args.drive_folder, "--out-dir", args.out_dir]
-        results["deeds"] = run("deed_search.py", deed_args)
+        if not args.skip_deeds:
+            deed_args = [street, "--drive-folder", args.drive_folder, "--out-dir", work_dir]
+            results["deeds"] = run("deed_search.py", deed_args)
 
-    if not args.skip_comps:
-        comp_args = ["--subdivision", args.subdivision,
-                     "--drive-folder", args.drive_folder,
-                     "--out-dir", args.out_dir]
-        if args.pid:
-            comp_args += ["--subject-pid", args.pid]
-        results["comps"] = run("comps.py", comp_args)
+        if not args.skip_comps:
+            comp_args = ["--subdivision", args.subdivision,
+                         "--drive-folder", args.drive_folder,
+                         "--out-dir", work_dir]
+            if args.pid:
+                comp_args += ["--subject-pid", args.pid]
+            results["comps"] = run("comps.py", comp_args)
 
-    if not args.skip_owner and args.owner:
-        owner_args = [args.owner, args.address,
-                      "--drive-folder", args.drive_folder,
-                      "--out-dir", args.out_dir]
-        results["owner"] = run("owner_lookup.py", owner_args)
+        if not args.skip_owner and args.owner:
+            owner_args = [args.owner, args.address,
+                          "--drive-folder", args.drive_folder,
+                          "--out-dir", work_dir]
+            results["owner"] = run("owner_lookup.py", owner_args)
+
+    finally:
+        # Clean up working directory regardless of success/failure
+        if os.path.exists(work_dir):
+            shutil.rmtree(work_dir)
+            print(f"\nCleaned up: {work_dir}")
 
     print(f"\n{'='*60}")
     print("SUMMARY")

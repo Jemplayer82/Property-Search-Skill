@@ -537,6 +537,18 @@ def main():
     HTML(string=html_content).write_pdf(args.output)
     print(f"PDF generated: {args.output}")
 
+    # Clean up temp image files after PDF is written
+    cleaned = []
+    for path in [args.map_view, args.street_view]:
+        if path and Path(path).exists():
+            Path(path).unlink()
+            cleaned.append(path)
+    if args.comps_file and Path(args.comps_file).exists():
+        Path(args.comps_file).unlink()
+        cleaned.append(args.comps_file)
+    if cleaned:
+        print(f"Cleaned up: {', '.join(cleaned)}")
+
 
 if __name__ == '__main__':
     main()
