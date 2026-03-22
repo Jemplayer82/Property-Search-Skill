@@ -17,13 +17,15 @@ Research Texas property ownership, appraisal values, and owner contact informati
 2. **Only then proceed** with browser automation or data extraction
 
 2. **Check Drive** - Search for existing folder by property address
-3. **TCAD Status Check** - Open travis.prodigycad.com and verify site is operational (not under maintenance)
-4. **TCAD Lookup** - Get property data from travis.prodigycad.com
-5. **Deed Search** - Check tccsearch.org for instrument history
-6. **Owner Contact** - Find phone/email via people-finder databases
-7. **Comps Analysis** - Pull comparable sales (3-5 properties, same area, 3-6 months)
-8. **Create Folder** - Organize all documents in Google Drive
-9. **Spell Check** - Review and correct all generated documents before finalizing
+3. **CAD Status Check** - Open CAD site and verify it's operational (not under maintenance)
+4. **CAD Lookup** - Get property data from CAD site
+5. **PDF Download** - Use Chrome headless to download full detail PDF from CAD site
+6. **PDF Report Generation** - Use `generate_report.py` to create comprehensive PDF report
+7. **Deed Search** - Check tccsearch.org for instrument history (if applicable)
+8. **Owner Contact** - Find phone/email via people-finder databases
+9. **Comps Analysis** - Pull comparable sales (3-5 properties, same area, 3-6 months)
+10. **Create Folder** - Organize all documents in Google Drive
+11. **Spell Check** - Review and correct all generated documents before finalizing
 
 ## Communication Requirements
 
@@ -172,6 +174,47 @@ google-chrome --headless --print-to-pdf="/path/to/output.pdf" --no-sandbox "http
 - Output path should be an absolute path
 - Check exit code and file size to verify success
 
+### PDF Report Generation (GENERIC)
+
+After downloading the CAD PDF, generate a comprehensive property research report:
+
+```bash
+python3 ~/.openclaw/workspace/skills/property-research/scripts/generate_report.py \
+  --address "Property Address, City, State ZIP" \
+  --prop-id "CAD_ID" \
+  --owner1 "Owner 1 Name" \
+  --owner2 "Owner 2 Name" \
+  --mailing-address "Owner Mailing Address" \
+  --legal-desc "Legal Description" \
+  --subdivision "Subdivision Name" \
+  --neighborhood "Neighborhood Code" \
+  --prop-type "Property Type" \
+  --year "Year Built" \
+  --sqft "Living Area" \
+  --land-value "Land Value" \
+  --improvement-value "Improvement Value" \
+  --total-value "Total Appraised Value" \
+  --value-2024 "2024 Value" \
+  --value-2023 "2023 Value" \
+  --value-2022 "2022 Value" \
+  --deed-instrument "Instrument Number" \
+  --deed-type "Deed Type" \
+  --deed-date "Recording Date" \
+  --previous-owner "Previous Owner" \
+  --notes "Research Notes" \
+  --output "Output_PDF_Name.pdf"
+```
+
+**Requirements:**
+- WeasyPrint must be installed: `pip install weasyprint`
+- Spell checker is optional but recommended: `pip install pyspellchecker`
+
+**Output:**
+- Comprehensive PDF report with property details, value history, deed history
+- Auto spell check on notes and comps
+- Google Maps/Appl Maps links in header
+- Property statistics row
+
 ### Owner Contact Sources
 - NationalPublicData.com
 - FastBackgroundCheck.com
@@ -194,6 +237,17 @@ Search pattern: `[FirstName] [LastName] [City] [State] phone`
 ```bash
 # Chrome headless print-to-PDF (works for any website)
 google-chrome --headless --print-to-pdf="/path/to/output.pdf" --no-sandbox "https://target-site.com/page" 2>&1
+```
+
+### PDF Report Generation (Generic)
+```bash
+python3 ~/.openclaw/workspace/skills/property-research/scripts/generate_report.py \
+  --address "Address" \
+  --prop-id "CAD_ID" \
+  --owner1 "Owner 1" \
+  --owner2 "Owner 2" \
+  --total-value "$Value" \
+  --output "Report_Name.pdf"
 ```
 
 ### Browser Automation (TCAD/tccsearch.org)
