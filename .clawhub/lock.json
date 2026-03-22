@@ -4,6 +4,14 @@
     "screen-monitor": {
       "version": "1.0.1",
       "installedAt": 1774063501191
+    },
+    "property-search": {
+      "version": "1.0.0",
+      "installedAt": 1774196156765
+    },
+    "git-essentials": {
+      "version": "1.0.0",
+      "installedAt": 1774198990817
     }
   }
 }

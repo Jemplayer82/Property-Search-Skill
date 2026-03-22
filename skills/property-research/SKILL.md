@@ -9,14 +9,17 @@ Research Texas property ownership, appraisal values, and owner contact informati
 
 ## Workflow Overview
 
-1. **Check Drive** - Search for existing folder by property address
-2. **TCAD Status Check** - Open travis.prodigycad.com and verify site is operational (not under maintenance)
-3. **TCAD Lookup** - Get property data from travis.prodigycad.com
-4. **Deed Search** - Check tccsearch.org for instrument history
-5. **Owner Contact** - Find phone/email via people-finder databases
-6. **Comps Analysis** - Pull comparable sales (3-5 properties, same area, 3-6 months)
-7. **Create Folder** - Organize all documents in Google Drive
-8. **Spell Check** - Review and correct all generated documents before finalizing
+**PRE-CHECK (ALWAYS RUN FIRST):**
+1. **Site Status Check** - Verify CAD site responds with HTTP 200 and is NOT on maintenance page before starting automation
+
+2. **Check Drive** - Search for existing folder by property address
+3. **TCAD Status Check** - Open travis.prodigycad.com and verify site is operational (not under maintenance)
+4. **TCAD Lookup** - Get property data from travis.prodigycad.com
+5. **Deed Search** - Check tccsearch.org for instrument history
+6. **Owner Contact** - Find phone/email via people-finder databases
+7. **Comps Analysis** - Pull comparable sales (3-5 properties, same area, 3-6 months)
+8. **Create Folder** - Organize all documents in Google Drive
+9. **Spell Check** - Review and correct all generated documents before finalizing
 
 ## Communication Requirements
 
@@ -88,11 +91,13 @@ Before proceeding, verify you have:
 - Scrape individual fields from the webpage and skip the PDF
 - Use only the "Appraisal Notice" summary (may be incomplete)
 - Assume data from webpage search results is sufficient
+- Start browser automation without first verifying site is up (HTTP 200 and not maintenance page)
 
 **DO:**
 - Always get the full detailed print view
 - Verify PDF contains all sections before closing browser
 - Use the PDF as the primary data source for the report
+- Run pre-check: `web_fetch` on CAD homepage to confirm HTTP 200 and no maintenance message before starting automation
 
 ### Handling CAD Maintenance
 
@@ -100,6 +105,24 @@ If CAD site is under maintenance:
 - Document the maintenance status in research notes
 - Try again later (usually resolved within hours)
 - Consider using cached/previous year data if available
+
+### Pre-Check: Verify CAD Site Before Automation
+
+**ALWAYS run this before starting browser automation:**
+
+```bash
+web_fetch url="https://travis.prodigycad.com" extractMode="text"
+```
+
+**Check for:**
+- HTTP 200 status (implied if fetch succeeds)
+- NO "under maintenance" message in response
+- Normal page title (e.g., "Public Portal")
+
+**If maintenance page detected:**
+- STOP automation immediately
+- Report: "TCAD is under maintenance - cannot proceed with property lookup"
+- Suggest trying again in 1-4 hours
 
 ### Owner Contact Sources
 - NationalPublicData.com
