@@ -6,6 +6,7 @@ Requires: weasyprint, pillow
 
 import argparse
 import base64
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -37,7 +38,7 @@ def row(label, value):
     return f"<tr><th>{label}</th><td>{value}</td></tr>"
 
 
-def generate_html_report(data, map_view=None, street_view=None):
+def generate_html_report(data, map_view=None, street_view=None, comps=None):
     today = datetime.now().strftime("%B %d, %Y")
     address = data.get('address', 'Unknown Address')
     address_encoded = address.replace(' ', '+')
@@ -118,6 +119,54 @@ def generate_html_report(data, map_view=None, street_view=None):
         row("Recording Date", data.get('deed_date')) +
         row("Previous Owner", data.get('previous_owner'))
     )
+
+    # Comps
+    comps_html = ""
+    if comps:
+        comp_rows = ""
+        for i, c in enumerate(comps.get("comps", []), 1):
+            pct = c.get("diff_pct", "")
+            diff_val = c.get("diff", "")
+            if pct.startswith("+"):
+                diff_class = "diff-pos"
+            elif pct.startswith("-"):
+                diff_class = "diff-neg"
+            else:
+                diff_class = "diff-zero"
+            comp_rows += f"""<tr>
+                <td>{i}</td>
+                <td>{c.get('address','')}</td>
+                <td>{c.get('cad_id','')}</td>
+                <td><strong>{c.get('value','')}</strong></td>
+                <td class="{diff_class}">{diff_val} ({pct})</td>
+                <td class="notes">{c.get('notes','')}</td>
+            </tr>"""
+
+        s = comps.get("summary", {})
+        summary_html = ""
+        for label, key in [("Average", "avg"), ("High", "high"), ("Low", "low"), ("Median", "median"), ("vs Average", "variance")]:
+            val = s.get(key)
+            if val:
+                summary_html += f'<div class="comp-stat"><div class="comp-stat-label">{label}</div><div class="comp-stat-value">{val}</div></div>'
+
+        comps_html = f"""
+        <div class="section">
+            <h2>Comparable Properties (2025 Appraised Values)</h2>
+            <table class="comps-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Address</th>
+                        <th>CAD ID</th>
+                        <th>Value</th>
+                        <th>vs Subject</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>{comp_rows}</tbody>
+            </table>
+            {"<div class='comps-summary'>" + summary_html + "</div>" if summary_html else ""}
+        </div>"""
 
     html = f"""<!DOCTYPE html>
 <html>
@@ -274,6 +323,44 @@ def generate_html_report(data, map_view=None, street_view=None):
         .value-table th {{ width: 30%; }}
         .value-highlight td {{ font-weight: 700; color: #1a6b3c; }}
 
+        /* COMPS TABLE */
+        .comps-table th {{
+            width: auto;
+            white-space: nowrap;
+        }}
+        .comps-table td {{ white-space: nowrap; }}
+        .comps-table td.notes {{ white-space: normal; color: #666; font-size: 8pt; }}
+        .diff-pos {{ color: #c0392b; font-weight: 600; }}
+        .diff-neg {{ color: #1a6b3c; font-weight: 600; }}
+        .diff-zero {{ color: #555; font-weight: 600; }}
+        .comps-summary {{
+            display: flex;
+            gap: 0;
+            margin-top: 10pt;
+            border: 1px solid #e0e6ed;
+            border-radius: 4pt;
+            overflow: hidden;
+        }}
+        .comp-stat {{
+            flex: 1;
+            padding: 8pt 10pt;
+            border-right: 1px solid #e0e6ed;
+            text-align: center;
+        }}
+        .comp-stat:last-child {{ border-right: none; }}
+        .comp-stat-label {{
+            font-size: 6.5pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #999;
+            margin-bottom: 2pt;
+        }}
+        .comp-stat-value {{
+            font-size: 10pt;
+            font-weight: 700;
+            color: #0f2137;
+        }}
+
         /* FOOTER */
         .footer {{
             margin-top: 18pt;
@@ -317,10 +404,7 @@ def generate_html_report(data, map_view=None, street_view=None):
 
         {"<div class='section'><h2>Deed History</h2><table>" + deed_rows + "</table></div>" if deed_rows else ""}
 
-        <div class="section">
-            <h2>Comparable Properties</h2>
-            <p style="color:#555; font-size:8.5pt">See <em>Comps_Analysis.md</em> in Google Drive folder for detailed comparable property analysis.</p>
-        </div>
+        {comps_html if comps_html else "<div class='section'><h2>Comparable Properties</h2><p style='color:#555;font-size:8.5pt'>See <em>Comps_Analysis.md</em> in Google Drive folder for detailed comparable property analysis.</p></div>"}
 
         {('<div class="section"><h2>Notes</h2><p style="color:#555;font-size:8.5pt">' + data['notes'] + '</p></div>') if data.get('notes') else ''}
 
@@ -363,6 +447,7 @@ def main():
     parser.add_argument('--deed-date')
     parser.add_argument('--previous-owner')
     parser.add_argument('--notes')
+    parser.add_argument('--comps-file', help='Path to comps JSON file')
     parser.add_argument('--street-view')
     parser.add_argument('--map-view')
     parser.add_argument('--output', '-o', required=True)
@@ -400,8 +485,9 @@ def main():
 
     map_view = image_to_base64(args.map_view) if args.map_view else None
     street_view = image_to_base64(args.street_view) if args.street_view else None
+    comps = json.loads(Path(args.comps_file).read_text()) if args.comps_file else None
 
-    html_content = generate_html_report(data, map_view, street_view)
+    html_content = generate_html_report(data, map_view, street_view, comps)
     HTML(string=html_content).write_pdf(args.output)
     print(f"PDF generated: {args.output}")
 
