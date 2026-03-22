@@ -1,0 +1,181 @@
+---
+name: property-research
+description: Research Texas property ownership, appraisal values, and owner contact information. Use when the user asks about a property address, wants to find property details, owner information, or create organized research folders in Google Drive. Handles Travis County CAD (TCAD) lookups, owner contact searches, comps analysis, and Google Drive document creation with property photos.
+---
+
+# Property Research
+
+Research Texas property ownership, appraisal values, and owner contact information. Creates organized Google Drive folders with property data, owner contact info, and street view photos. Currently optimized for Travis County (TCAD) but adaptable to other counties.
+
+## Workflow Overview
+
+1. **Check Drive** - Search for existing folder by property address
+2. **TCAD Status Check** - Open travis.prodigycad.com and verify site is operational (not under maintenance)
+3. **TCAD Lookup** - Get property data from travis.prodigycad.com
+4. **Deed Search** - Check tccsearch.org for instrument history
+5. **Owner Contact** - Find phone/email via people-finder databases
+6. **Comps Analysis** - Pull comparable sales (3-5 properties, same area, 3-6 months)
+7. **Create Folder** - Organize all documents in Google Drive
+8. **Spell Check** - Review and correct all generated documents before finalizing
+
+## Communication Requirements
+
+**Send status update at the start of each section:**
+- "Starting [Section Name]..."
+- Brief context of what this step does
+
+**Notify immediately on failure:**
+- If a step fails or is blocked, report it right away
+- Explain what failed and why
+- Offer alternatives or next steps
+- Do not proceed silently past failures without user awareness
+
+## Quick Reference
+
+### File Naming
+```
+Property Address Folder/
+├── [Address]_Property_Report.pdf    # Comprehensive PDF report
+├── TCAD_[PropID].pdf                # TCAD print/download (PRIMARY)
+├── Owner_Contact_Info.gdoc           # Contact info with photo
+├── Google_Maps_Street_View.png       # Street view image
+└── Comps_Analysis.md                 # Comparable properties
+```
+
+### CAD Document Download (CRITICAL - DO NOT SKIP)
+
+**⚠️ NEVER rely solely on scraped webpage data. Always get the official CAD PDF document.**
+
+The official PDF contains complete property records including:
+- All property details and characteristics
+- Complete value history
+- Full deed history
+- Building/land breakdowns
+- Taxing jurisdictions
+- Legal descriptions
+
+#### For TCAD (Travis County):
+1. Open https://travis.prodigycad.com/property-search
+2. **Check for maintenance message** - If site shows "under maintenance", try again later
+3. Search for property and click PropID for detail page
+4. **Click printer icon** (top-right corner of page)
+5. Select "Print" and save as PDF
+6. **Verify PDF downloaded** - check file size is reasonable (>50KB)
+7. Upload to Drive as `TCAD_[PropID].pdf`
+
+#### For Hays CAD (Hays County):
+1. Open https://esearch.hayscad.com/
+2. Search for property
+3. Click on Quick Ref ID to view details
+4. **Click "Print" button → select "Print Detailed View"**
+5. Save as PDF - this contains ALL property data
+6. Upload to Drive as `HaysCAD_[QuickRefID].pdf`
+
+**Note:** The "Appraisal Notice" link downloads a different document (summary only). Use "Print Detailed View" for complete records.
+
+### Document Verification Checklist
+
+Before proceeding, verify you have:
+- [ ] Official PDF downloaded and saved
+- [ ] File size >50KB (ensures complete document)
+- [ ] PDF opens and displays property data
+- [ ] PDF uploaded to Google Drive
+- [ ] All sections visible (Property Details, Values, Deed History, etc.)
+
+### ⚠️ Common Mistakes to Avoid
+
+**DON'T:**
+- Scrape individual fields from the webpage and skip the PDF
+- Use only the "Appraisal Notice" summary (may be incomplete)
+- Assume data from webpage search results is sufficient
+
+**DO:**
+- Always get the full detailed print view
+- Verify PDF contains all sections before closing browser
+- Use the PDF as the primary data source for the report
+
+### Handling CAD Maintenance
+
+If CAD site is under maintenance:
+- Document the maintenance status in research notes
+- Try again later (usually resolved within hours)
+- Consider using cached/previous year data if available
+
+### Owner Contact Sources
+- NationalPublicData.com
+- FastBackgroundCheck.com
+- ThatsThem.com
+
+Search pattern: `[FirstName] [LastName] [City] [State] phone`
+
+### Comps Selection Rules
+| Guideline | Rule |
+|-----------|------|
+| Location | Same neighborhood, 0.5-1 mile radius |
+| Time | Last 3-6 months (90 days ideal) |
+| Size | Within 20% of subject GLA |
+| Age/Style | Same era and design |
+| Uniformity | 3-5 similar properties |
+
+## Tools & Commands
+
+### Browser Automation (TCAD/tccsearch.org)
+```bash
+# TCAD requires JavaScript - use browser tool
+browser open "https://travis.prodigycad.com/property/[propId]"
+browser snapshot --fullPage
+
+# IMPORTANT: Click print button to generate PDF
+# Upload TCAD_[PropID].pdf to Drive
+```
+
+### Scrapling (Stealth for anti-bot sites)
+```python
+from scrapling import StealthyFetcher
+fetcher = StealthyFetcher()
+response = fetcher.fetch("https://example.com")
+print(response.html_content)
+```
+
+### Google Drive
+```bash
+# Search existing folder
+gog drive search "Property Address" --json
+
+# Create folder
+gog drive folder-create "3524 Winding Shore Lane" --parent [parentId]
+
+# Upload
+gog drive upload file.pdf --parent [folderId]
+```
+
+### Owner Contact Script
+```bash
+python3 scripts/owner_contact.py "Owner Name" --address "Property Address" --prop-id [PropID] --output owner.md
+```
+
+### PDF Report Generation
+```bash
+python3 scripts/generate_report.py \
+  --address "3524 Winding Shore Lane, Pflugerville, TX" \
+  --prop-id 550733 \
+  --owner1 "Landon Ferguson" \
+  --total-value "$461,373" \
+  --street-view street_view.jpg \
+  --map-view map_view.jpg \
+  --output Property_Report.pdf
+```
+
+## Detailed Guides
+
+- **TCAD Navigation**: See [references/tcad-guide.md](references/tcad-guide.md)
+- **tccsearch.org Workflow**: See references/tcad-guide.md (deed search section)
+
+## Cleanup
+
+**Always close browser when done:**
+```bash
+browser stop
+```
+
+This prevents session conflicts and releases resources.
