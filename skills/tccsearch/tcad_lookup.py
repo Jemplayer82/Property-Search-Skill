@@ -7,6 +7,8 @@ Requires: requests, websocket-client, gog (Drive upload)
 """
 import argparse, base64, json, os, subprocess, sys, time, urllib.request
 import websocket
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from site_check import assert_site_up
 
 CDP_HTTP = "http://127.0.0.1:18792"
 BASE_URL = "https://travis.prodigycad.com"
@@ -161,6 +163,8 @@ def main():
 
     if not args.address and not args.pid:
         parser.error("Provide an address or --pid")
+
+    assert_site_up("Travis CAD", BASE_URL)
 
     ws_url = get_ws_url(args.auth_token) if args.auth_token else _get_ws_url_direct()
     ws = websocket.create_connection(ws_url, timeout=20)

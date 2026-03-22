@@ -6,6 +6,8 @@ Requires: requests, websocket-client, gog (for Drive upload)
 """
 import argparse, json, os, subprocess, sys, time, urllib.parse
 import requests, websocket
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from site_check import assert_site_up
 
 CDP_URL = "http://127.0.0.1:18800"  # OpenClaw browser relay CDP port
 
@@ -143,6 +145,8 @@ def main():
     args = parser.parse_args()
 
     want_types = {t.strip().lower() for t in args.doc_types.split(",")}
+
+    assert_site_up("tccsearch.org", "https://tccsearch.org")
 
     tab = get_tab()
     ws_url = tab["wsUrl"]

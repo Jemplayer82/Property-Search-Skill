@@ -28,6 +28,10 @@ except ImportError:
 
 SEARXNG = "http://192.168.7.17:8888"
 
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from site_check import assert_site_up
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
                   "(KHTML, like Gecko) Chrome/123.0 Safari/537.36",
@@ -273,6 +277,8 @@ def main():
         f'{name_v1} {street_num} {street_name} {city}',
         f'{name_v2} {city} {state} phone',
     ]
+
+    assert_site_up("SearXNG", SEARXNG)
 
     print(f"Owner: {args.owner}")
     print(f"Property: {args.address}")

@@ -10,6 +10,8 @@ Requires: websocket-client, gog
 """
 import argparse, json, os, subprocess, sys, time, urllib.request
 import websocket
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from site_check import assert_site_up
 
 CDP_HTTP = "http://127.0.0.1:18792"
 BASE_URL = "https://travis.prodigycad.com"
@@ -212,6 +214,8 @@ def main():
     parser.add_argument("--skip-detail", action="store_true",
                         help="Skip per-property detail pages (faster, less data)")
     args = parser.parse_args()
+
+    assert_site_up("Travis CAD", BASE_URL)
 
     ws = websocket.create_connection(get_ws_url(), timeout=20)
     cdp(ws, "Page.enable")

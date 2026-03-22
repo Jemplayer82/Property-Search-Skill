@@ -19,6 +19,8 @@ all uploads complete.
 import argparse, os, shutil, subprocess, sys, tempfile
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SCRIPT_DIR)
+from site_check import check_site
 
 def run(script, args_list):
     cmd = [sys.executable, os.path.join(SCRIPT_DIR, script)] + args_list
@@ -65,6 +67,27 @@ def main():
         print(f"  Folder ID: {args.drive_folder}")
         print(f"  https://drive.google.com/drive/folders/{args.drive_folder}")
 
+    # Pre-flight: check that required sites are reachable before doing any work
+    print("\nPre-flight site checks:")
+    site_checks = []
+    if not args.skip_tcad:
+        site_checks.append(("Travis CAD", "https://travis.prodigycad.com"))
+    if not args.skip_deeds:
+        site_checks.append(("tccsearch.org", "https://tccsearch.org"))
+    if not args.skip_owner and args.owner:
+        site_checks.append(("SearXNG", "http://192.168.7.17:8888"))
+
+    failed_sites = set()
+    for name, url in site_checks:
+        up, reason = check_site(url)
+        status = "ok" if up else f"DOWN — {reason}"
+        print(f"  {name}: {status}")
+        if not up:
+            failed_sites.add(name)
+
+    if failed_sites:
+        print(f"\n[WARNING] {len(failed_sites)} site(s) unavailable — those steps will be skipped.\n")
+
     # Create a clean working directory for this run
     slug = args.address.replace(" ", "_").replace(",", "")[:40]
     work_dir = tempfile.mkdtemp(prefix=f"openclaw_{slug}_")
@@ -77,28 +100,44 @@ def main():
 
     try:
         if not args.skip_tcad:
-            tcad_args = [args.address, "--drive-folder", args.drive_folder, "--out-dir", work_dir]
-            if args.pid:
-                tcad_args += ["--pid", args.pid]
-            results["tcad"] = run("tcad_lookup.py", tcad_args)
+            if "Travis CAD" in failed_sites:
+                print("\n[SKIP] tcad — Travis CAD is unavailable")
+                results["tcad"] = False
+            else:
+                tcad_args = [args.address, "--drive-folder", args.drive_folder, "--out-dir", work_dir]
+                if args.pid:
+                    tcad_args += ["--pid", args.pid]
+                results["tcad"] = run("tcad_lookup.py", tcad_args)
 
         if not args.skip_deeds:
-            deed_args = [street, "--drive-folder", args.drive_folder, "--out-dir", work_dir]
-            results["deeds"] = run("deed_search.py", deed_args)
+            if "tccsearch.org" in failed_sites:
+                print("\n[SKIP] deeds — tccsearch.org is unavailable")
+                results["deeds"] = False
+            else:
+                deed_args = [street, "--drive-folder", args.drive_folder, "--out-dir", work_dir]
+                results["deeds"] = run("deed_search.py", deed_args)
 
         if not args.skip_comps:
-            comp_args = ["--subdivision", args.subdivision,
-                         "--drive-folder", args.drive_folder,
-                         "--out-dir", work_dir]
-            if args.pid:
-                comp_args += ["--subject-pid", args.pid]
-            results["comps"] = run("comps.py", comp_args)
+            if "Travis CAD" in failed_sites:
+                print("\n[SKIP] comps — Travis CAD is unavailable")
+                results["comps"] = False
+            else:
+                comp_args = ["--subdivision", args.subdivision,
+                             "--drive-folder", args.drive_folder,
+                             "--out-dir", work_dir]
+                if args.pid:
+                    comp_args += ["--subject-pid", args.pid]
+                results["comps"] = run("comps.py", comp_args)
 
         if not args.skip_owner and args.owner:
-            owner_args = [args.owner, args.address,
-                          "--drive-folder", args.drive_folder,
-                          "--out-dir", work_dir]
-            results["owner"] = run("owner_lookup.py", owner_args)
+            if "SearXNG" in failed_sites:
+                print("\n[SKIP] owner — SearXNG is unavailable")
+                results["owner"] = False
+            else:
+                owner_args = [args.owner, args.address,
+                              "--drive-folder", args.drive_folder,
+                              "--out-dir", work_dir]
+                results["owner"] = run("owner_lookup.py", owner_args)
 
     finally:
         # Clean up working directory regardless of success/failure
