@@ -16,14 +16,22 @@ Research Texas property ownership, appraisal values, and owner contact informati
 - If folder exists, read all files (PDFs, MD, Docs) to gather existing data
 - Only proceed with new research if data is missing or outdated
 
+### Step 1b: Scan for Print/PDF Options (CRITICAL)
+- **Always check for print/download buttons FIRST** before doing any data entry
+- TCAD: Look for printer icon/button - use it to generate PDF
+- tccsearch.org: Look for print/download options for deed records
+- Any other official site with PDF generation should be used immediately
+- If no print option available, then proceed with browser automation/screenshot
+
 ### Step 2: Create Drive Folder Structure
 ```
 Property Address Folder/
-├── TCAD_[PropertyID].pdf (TCAD page PDF printed from printer button)
+├── TCAD_[PropertyID].pdf (Printer button PDF - PRIMARY DATA SOURCE)
+├── Deed_Records.pdf (tccsearch.org print/download if available)
 ├── Owner_Contact_Info.gdoc (Google Doc with photo)
 ├── Google_Maps_Street_View.png
 ├── Comps_Analysis.md (comparable properties)
-└── Deed_Records.md (from tccsearch.org)
+└── Deed_Records.md (from tccsearch.org if PDF not available)
 ```
 
 ### Step 3: Gather Property Data
@@ -32,12 +40,13 @@ Property Address Folder/
    - Owner name(s)
    - Appraisal values
    - Property details (sqft, year built, etc.)
-   - **Print to PDF using the printer button** on TCAD's property page
+   - **PRINT TO PDF**: Always check for and use TCAD's printer button to generate a PDF of the property page. This is your primary method for capturing official property data. Upload this PDF as `TCAD_[PropertyID].pdf` to Google Drive.
 
 2. **Deed Search**: Check tccsearch.org (Travis County Clerk) for:
    - Deed instrument numbers
    - Warranty deed dates
    - Previous owners
+   - **PRINT TO PDF**: If tccsearch.org offers a print or download option, use it to capture deed records
    - May need browser automation for JavaScript-heavy interactions
 
 ### Step 4: Find Owner Contact Info
@@ -188,8 +197,15 @@ Example: "Landon Ferguson Pflugerville TX phone"
 
 ## Notes
 
+- **ALWAYS PRINT TO PDF WHEN AVAILABLE**: Before doing anything else on property research sites, check if they offer a print or download button. Use it to capture official records. This includes:
+  - TCAD's printer button (primary method)
+  - tccsearch.org print/download options for deed records
+  - Any other official property data sites that offer PDF generation
+
 - **JavaScript-heavy sites (TCAD):** Use the `browser` tool for full page rendering. TCAD's React app requires JavaScript execution. **Always use the printer button on the TCAD page to generate a PDF**, not a screenshot.
+
 - **Sites with anti-bot protection (non-JS):** Use scrapling with `stealthy-fetch` to bypass Cloudflare and similar protections.
+
 - Always check Drive first for existing research
 - Property IDs (PropID) are stable identifiers in TCAD
 - 2025 appraisal values are updated annually
