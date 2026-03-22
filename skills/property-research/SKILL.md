@@ -1,317 +1,253 @@
 ---
 name: property-research
-description: Research Texas property ownership, appraisal values, and owner contact information. Use when the user asks about a property address, wants to find property details, owner information, or create organized research folders in Google Drive. Handles Travis County CAD (TCAD) lookups, owner contact searches, comps analysis, and Google Drive document creation with property photos.
+version: 2.0.0
+description: Research Texas property ownership, appraisal values, deed history, comparable sales, and owner contact info. Runs a full automated pipeline — CAD lookup, deed search, comps analysis, owner contact lookup, and a formatted PDF report — all uploaded to Google Drive. Supports Travis County (TCAD), Hays County (Hays CAD), and Williamson County (WCAD). Use when the user asks about a property address, wants property details, owner contact info, or a Drive research folder.
 ---
 
-# Property Research
+# Property Research Skill
 
-Research Texas property ownership, appraisal values, and owner contact information. Creates organized Google Drive folders with property data, owner contact info, and street view photos. Currently optimized for Travis County (TCAD) but adaptable to other counties.
+Automated pipeline for Texas real estate research. One command pulls CAD appraisal data, deed history, comparable properties, and owner contact info — and generates a formatted PDF report — all organized into a Google Drive folder.
 
-## Workflow Overview
+---
 
-**PRE-CHECK (ALWAYS RUN FIRST for ANY website):**
-1. **Site Status Check** - Run `web_fetch` on target URL to verify:
-   - HTTP 200 status (implied if fetch succeeds)
-   - NO maintenance/error message in response
-   - Site is actually responsive
-2. **Only then proceed** with browser automation or data extraction
-
-2. **Check Drive** - Search for existing folder by property address
-3. **CAD Status Check** - Open CAD site and verify it's operational (not under maintenance)
-4. **CAD Lookup** - Get property data from CAD site
-5. **PDF Download** - Use Chrome headless to download full detail PDF from CAD site
-6. **PDF Report Generation** - Use `generate_report.py` to create comprehensive PDF report
-7. **Deed Search** - Check tccsearch.org for instrument history (if applicable)
-8. **Owner Contact** - Find phone/email via people-finder databases
-9. **Comps Analysis** - Pull comparable sales (3-5 properties, same area, 3-6 months)
-10. **Create Folder** - Organize all documents in Google Drive
-11. **Spell Check** - Review and correct all generated documents before finalizing
-
-## Communication Requirements
-
-**Send status update at the start of each section:**
-- "Starting [Section Name]..."
-- Brief context of what this step does
-
-**Notify immediately on failure:**
-- If a step fails or is blocked, report it right away
-- Explain what failed and why
-- Offer alternatives or next steps
-- Do not proceed silently past failures without user awareness
-
-**IMPORTANT - Site Status Check Required:**
-- For ANY new website (TCAD, tccsearch.org, people-finders, etc.): ALWAYS run `web_fetch` first
-- If site is down/maintenance: STOP and report immediately
-- Do NOT start browser automation without verifying site responsiveness
-
-## Quick Reference
-
-### File Naming
-```
-Property Address Folder/
-├── [Address]_Property_Report.pdf    # Comprehensive PDF report
-├── TCAD_[PropID].pdf                # TCAD print/download (PRIMARY)
-├── Owner_Contact_Info.gdoc           # Contact info with photo
-├── Google_Maps_Street_View.png       # Street view image
-└── Comps_Analysis.md                 # Comparable properties
-```
-
-### CAD Document Download (CRITICAL - DO NOT SKIP)
-
-**⚠️ NEVER rely solely on scraped webpage data. Always get the official CAD PDF document.**
-
-The official PDF contains complete property records including:
-- All property details and characteristics
-- Complete value history
-- Full deed history
-- Building/land breakdowns
-- Taxing jurisdictions
-- Legal descriptions
-
-#### For ANY CAD Website - Print Full Detail View PDF
-
-**IMPORTANT - Use system print-to-PDF for complete documents:**
-- Many CAD sites use dynamic JavaScript menus that prevent direct PDF downloads
-- Browser automation cannot trigger system print dialogs
-- **Use Chrome headless mode to generate proper printouts**
+## Quick Start
 
 ```bash
-google-chrome --headless --print-to-pdf="/path/to/output.pdf" --no-sandbox "https://target-site.com/property-url" 2>&1
+# Full run — auto-creates Drive subfolder under a parent
+python3 ~/.openclaw/workspace/skills/property-research/scripts/run_research.py \
+  "3524 Winding Shore Lane, Pflugerville TX" \
+  --drive-parent <parent_folder_id> \
+  --owner "Ferguson Landon Jennifer"
+
+# Full run — into an existing Drive folder
+python3 ~/.openclaw/workspace/skills/property-research/scripts/run_research.py \
+  "360 Purple Martin Ave, Kyle TX 78640" \
+  --drive-folder <folder_id> \
+  --owner "Ferguson Landon Jennifer" \
+  --subdivision "Meadows at Kyle Phase Two"
+
+# Skip steps you don't need
+python3 ... --skip-comps --skip-deeds
+
+# Already know the CAD ID — skip the search step
+python3 ... --pid 550733
 ```
 
-**For TCAD (Travis County):**
-1. **Run pre-check first**: `web_fetch url="https://travis.prodigycad.com"`
-2. **Only if pre-check passes**, open property page: `https://travis.prodigycad.com/property/[propId]`
-3. **Print using Chrome headless** (full detail view includes all sections):
-```bash
-google-chrome --headless --print-to-pdf="TCAD_[PropID].pdf" --no-sandbox "https://travis.prodigycad.com/property/[propId]" 2>&1
+`run_research.py` does a **pre-flight site check** on all target websites before starting any work. If a site is down or in maintenance it skips that step cleanly instead of hammering it.
+
+---
+
+## Pipeline Steps
+
+| Step | Script | What It Does |
+|------|--------|-------------|
+| 1. TCAD lookup | `tcad_lookup.py` | Searches Travis CAD by address, saves full property detail PDF to Drive |
+| 2. Deed search | `deed_search.py` | Pulls Deed of Trust + Warranty Deed PDFs from tccsearch.org → Drive |
+| 3. Comps | `comps.py` | Pulls comparable properties from TCAD by subdivision → markdown report → Drive |
+| 4. Owner contact | `owner_lookup.py` | SearXNG + public records scrape for phone/email → markdown report → Drive |
+| 5. PDF report | `generate_report.py` | Generates a formatted property research PDF with maps, stats, comps table → Drive |
+
+---
+
+## Scripts Reference
+
+### `run_research.py` — Full Pipeline Orchestrator
+
 ```
-4. **Verify PDF downloaded** - check file size is reasonable (>50KB)
-5. Upload to Drive as `TCAD_[PropID].pdf`
+python3 run_research.py <address> [options]
 
-**For Hays CAD (Hays County):**
-1. **Run pre-check first**: `web_fetch url="https://esearch.hayscad.com"`
-2. **Only if pre-check passes**, open property page: `https://esearch.hayscad.com/Property/View/[QuickRefID]?year=2025&ownerId=[OwnerID]`
-3. **Print using Chrome headless** (full detail view includes all sections):
-```bash
-google-chrome --headless --print-to-pdf="HaysCAD_[QuickRefID].pdf" --no-sandbox "https://esearch.hayscad.com/Property/View/[QuickRefID]?year=2025&ownerId=[OwnerID]" 2>&1
+Required (one of):
+  --drive-folder <id>   Existing Drive folder ID — upload directly here
+  --drive-parent <id>   Parent Drive folder ID — auto-creates subfolder named after address
+
+Options:
+  --pid <id>            CAD Property ID (skips address search)
+  --owner <name>        Owner name for contact lookup (e.g. "Ferguson Landon Jennifer")
+  --subdivision <name>  Subdivision for comps (default: "Park at Blackhawk")
+  --skip-tcad           Skip TCAD lookup
+  --skip-deeds          Skip deed search
+  --skip-comps          Skip comps analysis
+  --skip-owner          Skip owner contact lookup
 ```
-4. **Verify PDF downloaded** - check file size is reasonable (>50KB)
-5. Upload to Drive as `HaysCAD_[QuickRefID].pdf`
 
-**For ANY other CAD website:**
-1. **Run pre-check first**: `web_fetch url="https://target-cad-site.com"`
-2. **Open the property detail page URL in Chrome headless**:
-```bash
-google-chrome --headless --print-to-pdf="CAD_[Site]_[ID].pdf" --no-sandbox "https://target-cad-site.com/property/[specificPath]" 2>&1
-```
-3. **Verify PDF downloaded** - check file size is reasonable (>50KB)
-4. Upload to Drive as `CAD_[Site]_[ID].pdf`
+### `tcad_lookup.py` — Travis CAD Property Data
 
-**Note:** The "Appraisal Notice" or similar summary links download incomplete documents. Always use Chrome headless print-to-PDF for the complete detailed view.
-
-### Document Verification Checklist
-
-Before proceeding, verify you have:
-- [ ] Official PDF downloaded and saved
-- [ ] File size >50KB (ensures complete document)
-- [ ] PDF opens and displays property data
-- [ ] PDF uploaded to Google Drive
-- [ ] All sections visible (Property Details, Values, Deed History, etc.)
-
-### ⚠️ Common Mistakes to Avoid
-
-**DON'T:**
-- Scrape individual fields from the webpage and skip the PDF
-- Use only the "Appraisal Notice" summary (may be incomplete)
-- Assume data from webpage search results is sufficient
-- Start browser automation without first verifying site is up (HTTP 200 and not maintenance page)
-
-**DO:**
-- Always get the full detailed print view
-- Verify PDF contains all sections before closing browser
-- Use the PDF as the primary data source for the report
-- Run pre-check: `web_fetch` on CAD homepage to confirm HTTP 200 and no maintenance message before starting automation
-
-### Handling CAD Maintenance
-
-If CAD site is under maintenance:
-- Document the maintenance status in research notes
-- Try again later (usually resolved within hours)
-- Consider using cached/previous year data if available
-
-### Pre-Check: Verify ANY Site Before Automation
-
-**ALWAYS run this before starting browser automation on a new website:**
+Searches `travis.prodigycad.com` for a property by address or PID. Uses CDP browser automation to render the JavaScript SPA, then prints the full detail page to PDF.
 
 ```bash
-web_fetch url="https://target-site.com" extractMode="text"
+python3 tcad_lookup.py "3524 Winding Shore Lane" \
+  --drive-folder <id> --out-dir /tmp
 ```
 
-**Check for:**
-- HTTP 200 status (implied if fetch succeeds)
-- NO "under maintenance" or error message in response
-- Normal page title/content
+**Requires:** Running Chrome instance with CDP relay on `http://127.0.0.1:18792`
 
-**If site is down/maintenance:**
-- STOP automation immediately
-- Report: "[Site] is under maintenance - cannot proceed"
-- Suggest trying again later or using alternative method
+### `deed_search.py` — Deed History
 
-### Downloading Documents from ANY Website Using Chrome Headless
-
-When a website requires full-page PDF downloads but doesn't provide direct download links:
-1. Open the target URL in Chrome headless mode
-2. Use `--print-to-pdf` flag to save as PDF
+Searches `tccsearch.org` for deed documents by street address. Downloads Deed of Trust and Warranty Deed PDFs.
 
 ```bash
-google-chrome --headless --print-to-pdf="/path/to/output.pdf" --no-sandbox "https://target-website.com/page" 2>&1
+python3 deed_search.py "3524 Winding Shore" \
+  --drive-folder <id> --out-dir /tmp
 ```
 
-**Requirements:**
-- Google Chrome must be installed
-- The `--no-sandbox` flag is required for headless mode
-- Output path should be an absolute path
-- Check exit code and file size to verify success
+**Note:** Pass only the street portion of the address (no city/state). `run_research.py` does this automatically.
 
-### PDF Report Generation (GENERIC)
+### `comps.py` — Comparable Properties (Travis County)
 
-After downloading the CAD PDF, generate a comprehensive property research report:
+Searches TCAD by subdivision, scrapes comparable properties, outputs a markdown comps report.
 
 ```bash
-python3 ~/.openclaw/workspace/skills/property-research/scripts/generate_report.py \
-  --address "Property Address, City, State ZIP" \
-  --prop-id "CAD_ID" \
-  --owner1 "Owner 1 Name" \
-  --owner2 "Owner 2 Name" \
-  --mailing-address "Owner Mailing Address" \
-  --legal-desc "Legal Description" \
-  --subdivision "Subdivision Name" \
-  --neighborhood "Neighborhood Code" \
-  --prop-type "Property Type" \
-  --year "Year Built" \
-  --sqft "Living Area" \
-  --land-value "Land Value" \
-  --improvement-value "Improvement Value" \
-  --total-value "Total Appraised Value" \
-  --value-2024 "2024 Value" \
-  --value-2023 "2023 Value" \
-  --value-2022 "2022 Value" \
-  --deed-instrument "Instrument Number" \
-  --deed-type "Deed Type" \
-  --deed-date "Recording Date" \
-  --previous-owner "Previous Owner" \
-  --notes "Research Notes" \
-  --output "Output_PDF_Name.pdf"
+python3 comps.py \
+  --subdivision "Park at Blackhawk" \
+  --subject-pid 550733 \
+  --drive-folder <id> --out-dir /tmp
 ```
 
-**Requirements:**
-- WeasyPrint must be installed: `pip install weasyprint`
-- Spell checker is optional but recommended: `pip install pyspellchecker`
+### `owner_lookup.py` — Owner Contact Info
 
-**Output:**
-- Comprehensive PDF report with property details, value history, deed history
-- Auto spell check on notes and comps
-- Google Maps/Appl Maps links in header
-- Property statistics row
+Searches SearXNG (local instance at `http://192.168.7.17:8888`) for owner contact info via public records people-search sites.
 
-### Owner Contact Sources
-- NationalPublicData.com
-- FastBackgroundCheck.com
-- ThatsThem.com
-
-Search pattern: `[FirstName] [LastName] [City] [State] phone`
-
-### Comps Selection Rules
-| Guideline | Rule |
-|-----------|------|
-| Location | Same neighborhood, 0.5-1 mile radius |
-| Time | Last 3-6 months (90 days ideal) |
-| Size | Within 20% of subject GLA |
-| Age/Style | Same era and design |
-| Uniformity | 3-5 similar properties |
-
-## Tools & Commands
-
-### Downloading Documents from ANY Website (Generic)
 ```bash
-# Chrome headless print-to-PDF (works for any website)
-google-chrome --headless --print-to-pdf="/path/to/output.pdf" --no-sandbox "https://target-site.com/page" 2>&1
+python3 owner_lookup.py "Ferguson Landon Jennifer" "3524 Winding Shore Lane, Pflugerville TX" \
+  --drive-folder <id> --out-dir /tmp
 ```
 
-### PDF Report Generation (Generic)
+**Owner name format:** CAD format is `LastName FirstName Spouse` — pass as-is; the script builds name variants automatically.
+
+### `generate_report.py` — PDF Report Generator
+
+Generates a formatted property research PDF using WeasyPrint. Includes Google/Apple Maps links, stats bar, stacked map+street view images, owner info, property details, value history, deed history, and comps table.
+
 ```bash
-python3 ~/.openclaw/workspace/skills/property-research/scripts/generate_report.py \
-  --address "Address" \
-  --prop-id "CAD_ID" \
-  --owner1 "Owner 1" \
-  --owner2 "Owner 2" \
-  --total-value "$Value" \
-  --output "Report_Name.pdf"
+python3 generate_report.py \
+  --address "360 Purple Martin Ave, Kyle, TX 78640" \
+  --prop-id R142280 \
+  --owner1 "Landon S Ferguson" \
+  --owner2 "Jennifer M Ferguson" \
+  --mailing-address "9600 Escarpment Blvd Ste 745, Austin, TX 78749" \
+  --year 2015 \
+  --sqft 1500 \
+  --land-value '$69,380' \
+  --improvement-value '$199,790' \
+  --total-value '$269,170' \
+  --value-2024 '$303,120' \
+  --value-2023 '$333,560' \
+  --deed-instrument 2021221583 \
+  --deed-type "Warranty Deed" \
+  --deed-date "2021-08-15" \
+  --previous-owner "Prior Owner Name" \
+  --subdivision "Meadows at Kyle Phase Two" \
+  --neighborhood "MEAK" \
+  --prop-type "Residential" \
+  --legal-desc "Lot 14, Block 3" \
+  --map-view /tmp/map.jpg \
+  --street-view /tmp/street.jpg \
+  --comps-file /tmp/comps.json \
+  --notes "Research notes here" \
+  --output /tmp/Property_Report.pdf
 ```
 
-### Browser Automation (TCAD/tccsearch.org)
-```bash
-# TCAD requires JavaScript - use browser tool
-browser open "https://travis.prodigycad.com/property/[propId]"
-browser snapshot --fullPage
-
-# IMPORTANT: Chrome headless is preferred for PDF downloads (captures full detail view)
-# Upload TCAD_[PropID].pdf to Drive
+**Comps JSON format (`--comps-file`):**
+```json
+{
+  "comps": [
+    {
+      "address": "261 Purple Martin Ave",
+      "cad_id": "R140221",
+      "value": "$265,611",
+      "diff": "-$3,559",
+      "diff_pct": "-1.3%",
+      "notes": "Same street, very close in value"
+    }
+  ],
+  "summary": {
+    "avg": "$289,554",
+    "high": "$337,288",
+    "low": "$265,611",
+    "median": "$281,890",
+    "variance": "-$20,384 (-7.0%)"
+  }
+}
 ```
 
-### Scrapling (Stealth for anti-bot sites)
+**Spell check:** `pyspellchecker` runs automatically on notes and comp notes before rendering. Skips proper nouns and domain words.
+
+### `site_check.py` — Site Availability Utility
+
+Pre-flight check before scraping. Performs a single streaming GET (reads first 4KB only) to detect HTTP errors and maintenance pages.
+
 ```python
-from scrapling import StealthyFetcher
-fetcher = StealthyFetcher()
-# First verify site is up with web_fetch before using scrapling
-# web_fetch url="https://target-site.com"
-response = fetcher.fetch("https://example.com")
-print(response.html_content)
+from site_check import check_site, assert_site_up
+
+# Non-fatal check
+up, reason = check_site("https://travis.prodigycad.com")
+
+# Fatal check — exits with clear message if down
+assert_site_up("Travis CAD", "https://travis.prodigycad.com")
 ```
 
-### Google Drive
+---
+
+## Multi-County CAD Support
+
+`tcad_lookup.py` and `comps.py` are Travis County specific (use CDP browser automation).
+
+For other counties, use Chrome headless to print the detail page directly to PDF:
+
+**Hays County (Hays CAD):**
 ```bash
-# Search existing folder
-gog drive search "Property Address" --json
-
-# Create folder
-gog drive folder-create "3524 Winding Shore Lane" --parent [parentId]
-
-# Upload
-gog drive upload file.pdf --parent [folderId]
-
-# Get folder ID for upload
-gog drive search "Folder Name" --json
+# Find property: https://esearch.hayscad.com
+# Detail URL: https://esearch.hayscad.com/Property/View/<QuickRefID>?year=2025&ownerId=<OwnerID>
+google-chrome --headless --print-to-pdf="/tmp/HaysCAD_<ID>.pdf" --no-sandbox \
+  "https://esearch.hayscad.com/Property/View/<QuickRefID>?year=2025&ownerId=<OwnerID>" 2>&1
 ```
 
-### Owner Contact Script
+**Williamson County (WCAD):**
 ```bash
-python3 scripts/owner_contact.py "Owner Name" --address "Property Address" --prop-id [PropID] --output owner.md
+# Find property: https://esearch.wcad.org/Search/Result?keywords=<address>
+# Detail URL: https://esearch.wcad.org/Property/View/<id>
+google-chrome --headless --print-to-pdf="/tmp/WCAD_<ID>.pdf" --no-sandbox \
+  "https://esearch.wcad.org/Property/View/<id>" 2>&1
 ```
 
-### PDF Report Generation
+For non-TCAD counties, use `--skip-tcad --skip-deeds --skip-comps` and run `owner_lookup.py` + `generate_report.py` manually with the data you collected.
+
+---
+
+## Dependencies
+
 ```bash
-python3 scripts/generate_report.py \
-  --address "3524 Winding Shore Lane, Pflugerville, TX" \
-  --prop-id 550733 \
-  --owner1 "Landon Ferguson" \
-  --total-value "$461,373" \
-  --street-view street_view.jpg \
-  --map-view map_view.jpg \
-  --output Property_Report.pdf
+# Python packages
+pip install requests beautifulsoup4 websocket-client weasyprint pyspellchecker pillow \
+    --break-system-packages
+
+# gog CLI (Google Drive)
+# Already installed and authenticated at ~/.config/gogcli/
+
+# Chrome with CDP relay
+# Required for tcad_lookup.py, deed_search.py, comps.py
+# CDP relay at http://127.0.0.1:18792
+
+# SearXNG
+# Local instance at http://192.168.7.17:8888 (required for owner_lookup.py)
 ```
 
-## Detailed Guides
+---
 
-- **TCAD Navigation**: See [references/tcad-guide.md](references/tcad-guide.md)
-- **tccsearch.org Workflow**: See references/tcad-guide.md (deed search section)
+## Drive Organization
 
-## Cleanup
-
-**Always close browser when done:**
-```bash
-browser stop
+```
+<Address>/
+├── TCAD_<address>_PID<id>.pdf          # Travis CAD detail page (tcad_lookup.py)
+├── Warranty_Deed_<instrument>.pdf       # Deed docs (deed_search.py)
+├── Deed_of_Trust_<instrument>.pdf
+├── Comps_<subdivision>_<date>.md       # Comps report (comps.py)
+├── Owner_Lookup_<name>_<date>.md       # Owner contact (owner_lookup.py)
+└── <Address>_Property_Report.pdf       # Formatted PDF (generate_report.py)
 ```
 
-This prevents session conflicts and releases resources.
+---
+
+## References
+
+- [TCAD Navigation Guide](references/tcad-guide.md) — TCAD site layout and data fields
