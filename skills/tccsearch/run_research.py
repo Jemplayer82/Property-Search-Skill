@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """
 Full property research runner — TCAD + Deed search + Comps in one shot.
-Usage: python3 run_research.py "3524 Winding Shore Lane" --drive-folder <id>
+Usage: python3 run_research.py "3524 Winding Shore Lane" --drive-parent <id>
+       python3 run_research.py "3524 Winding Shore Lane" --drive-folder <id>
 
 Runs:
   1. tcad_lookup.py   → TCAD tax/appraisal PDF → Drive
-  2. deed_search.py   → Deed of Trust + Warranty Deed PDFs → Drive  
+  2. deed_search.py   → Deed of Trust + Warranty Deed PDFs → Drive
   3. comps.py         → Comps report → Drive
+  4. owner_lookup.py  → Owner contact info → Drive
+
+If --drive-parent is given, a subfolder named after the address is auto-created.
+If --drive-folder is given, files are uploaded directly to that folder.
 """
 import argparse, os, subprocess, sys
 
@@ -20,11 +25,25 @@ def run(script, args_list):
     result = subprocess.run(cmd)
     return result.returncode == 0
 
+def create_drive_folder(name, parent_id=None):
+    """Create a Google Drive folder and return its ID."""
+    cmd = ["gog", "drive", "mkdir", name, "--plain"]
+    if parent_id:
+        cmd += ["--parent", parent_id]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(f"Failed to create Drive folder: {result.stderr}")
+    for line in result.stdout.splitlines():
+        if line.startswith("id\t"):
+            return line.split("\t")[1].strip()
+    raise RuntimeError(f"Could not parse folder ID from: {result.stdout}")
+
 def main():
     parser = argparse.ArgumentParser(description="Full property research suite")
     parser.add_argument("address", help="Full street address (e.g. '3524 Winding Shore Lane')")
     parser.add_argument("--pid", help="TCAD Property ID (skips TCAD search)")
-    parser.add_argument("--drive-folder", required=True, help="Google Drive folder ID")
+    parser.add_argument("--drive-folder", help="Existing Google Drive folder ID to upload into")
+    parser.add_argument("--drive-parent", help="Parent Drive folder ID — auto-creates a subfolder named after the address")
     parser.add_argument("--subdivision", default="Park at Blackhawk",
                         help="Subdivision for comps (default: Park at Blackhawk)")
     parser.add_argument("--owner", help="Owner name for contact lookup (e.g. 'Ferguson Landon Jennifer')")
@@ -34,6 +53,15 @@ def main():
     parser.add_argument("--skip-owner", action="store_true")
     parser.add_argument("--out-dir", default="/tmp")
     args = parser.parse_args()
+
+    if not args.drive_folder and not args.drive_parent:
+        parser.error("Provide --drive-folder (existing folder) or --drive-parent (auto-creates subfolder)")
+
+    if args.drive_parent and not args.drive_folder:
+        print(f"\nCreating Drive folder: {args.address}")
+        args.drive_folder = create_drive_folder(args.address, args.drive_parent)
+        print(f"  Folder ID: {args.drive_folder}")
+        print(f"  https://drive.google.com/drive/folders/{args.drive_folder}")
 
     # Street-only for deed search (no city/state)
     street = " ".join(args.address.split()[:4])
@@ -69,6 +97,8 @@ def main():
     print(f"{'='*60}")
     for k, v in results.items():
         print(f"  {k}: {'✅ OK' if v else '❌ FAILED'}")
+    if args.drive_folder:
+        print(f"\n  Drive: https://drive.google.com/drive/folders/{args.drive_folder}")
 
 if __name__ == "__main__":
     main()

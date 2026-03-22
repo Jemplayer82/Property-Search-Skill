@@ -22,257 +22,364 @@ except ImportError:
 
 
 def image_to_base64(image_path):
-    """Convert image to base64 for embedding in HTML"""
     if not image_path or not Path(image_path).exists():
         return None
     with open(image_path, 'rb') as f:
-        return base64.b64encode(f.read()).decode()
+        data = f.read()
+    ext = Path(image_path).suffix.lower()
+    mime = "image/png" if ext == ".png" else "image/jpeg"
+    return base64.b64encode(data).decode(), mime
 
-def generate_html_report(data, street_view_b64=None, map_view_b64=None):
-    """Generate HTML for PDF conversion"""
-    
-    # Get current date
+
+def row(label, value):
+    if not value or value in ("N/A", "None", "none"):
+        return ""
+    return f"<tr><th>{label}</th><td>{value}</td></tr>"
+
+
+def generate_html_report(data, map_view=None, street_view=None):
     today = datetime.now().strftime("%B %d, %Y")
-    
-    # Images HTML
-    images_html = ""
-    if street_view_b64:
-        images_html += f'<img src="data:image/jpeg;base64,{street_view_b64}" class="property-image" alt="Street View">'
-    if map_view_b64:
-        images_html += f'<img src="data:image/jpeg;base64,{map_view_b64}" class="property-image" alt="Map View">'
-    
-    # Google/Apple Maps links
-    address_encoded = data.get('address', '').replace(' ', '+')
-    google_maps_url = f"https://www.google.com/maps/search/?api=1\u0026query={address_encoded}"
+    address = data.get('address', 'Unknown Address')
+    address_encoded = address.replace(' ', '+')
+    google_maps_url = f"https://www.google.com/maps/search/?api=1&query={address_encoded}"
     apple_maps_url = f"http://maps.apple.com/?q={address_encoded}"
-    
+
+    # Images
+    map_html = ""
+    if map_view:
+        b64, mime = map_view
+        map_html = f'<img src="data:{mime};base64,{b64}" class="map-image" alt="Map View">'
+
+    street_html = ""
+    if street_view:
+        b64, mime = street_view
+        street_html = f'<img src="data:{mime};base64,{b64}" class="street-image" alt="Street View">'
+
+    # Hero stats
+    stats = []
+    if data.get('total_value'):
+        stats.append(("Appraised Value", data['total_value'], "#1a6b3c"))
+    if data.get('sqft'):
+        stats.append(("Square Feet", data['sqft'], "#1a3a6b"))
+    if data.get('year_built'):
+        stats.append(("Year Built", data['year_built'], "#4a1a6b"))
+    if data.get('prop_id'):
+        stats.append(("CAD ID", data['prop_id'], "#6b4a1a"))
+
+    stats_html = "".join(f"""
+        <div class="stat-box" style="border-top: 4px solid {color}">
+            <div class="stat-label">{label}</div>
+            <div class="stat-value">{value}</div>
+        </div>""" for label, value, color in stats)
+
+    # Value history
+    value_history_rows = ""
+    for year, key in [("2025", "total_value"), ("2024", "value_2024"), ("2023", "value_2023"), ("2022", "value_2022")]:
+        val = data.get(key)
+        if val and val not in ("N/A", "None"):
+            value_history_rows += f"<tr><th>{year}</th><td>{val}</td></tr>"
+
+    # Owner section
+    owner_rows = (
+        row("Primary Owner", data.get('owner1_name')) +
+        row("Secondary Owner", data.get('owner2_name')) +
+        row("Mailing Address", data.get('mailing_address'))
+    )
+
+    # Property details
+    detail_rows = (
+        row("Legal Description", data.get('legal_desc')) +
+        row("Geographic ID", data.get('geo_id')) +
+        row("Subdivision", data.get('subdivision')) +
+        row("Neighborhood", data.get('neighborhood')) +
+        row("Property Type", data.get('prop_type'))
+    )
+
+    # Characteristics
+    char_rows = (
+        row("Year Built", data.get('year_built')) +
+        row("Square Footage", data.get('sqft')) +
+        row("Lot Size", data.get('lot_size')) +
+        row("Bedrooms", data.get('bedrooms')) +
+        row("Bathrooms", data.get('bathrooms'))
+    )
+
+    # Appraisal
+    appr_rows = (
+        row("Land Value", data.get('land_value')) +
+        row("Improvement Value", data.get('improvement_value')) +
+        row("Total Appraised Value", f"<strong>{data.get('total_value', '')}</strong>" if data.get('total_value') else None)
+    )
+
+    # Deed history
+    deed_rows = (
+        row("Instrument Number", data.get('deed_instrument')) +
+        row("Deed Type", data.get('deed_type')) +
+        row("Recording Date", data.get('deed_date')) +
+        row("Previous Owner", data.get('previous_owner'))
+    )
+
     html = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Property Report - {data.get('address', 'Unknown')}</title>
+    <title>Property Report - {address}</title>
     <style>
         @page {{
             size: letter;
-            margin: 0.75in;
+            margin: 0;
         }}
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
         body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 10pt;
-            line-height: 1.4;
-            color: #333;
+            font-size: 9.5pt;
+            line-height: 1.5;
+            color: #222;
+            background: #fff;
         }}
-        h1 {{
-            font-size: 18pt;
-            color: #1a1a1a;
+
+        /* HEADER */
+        .header {{
+            background: #0f2137;
+            color: white;
+            padding: 22pt 30pt 18pt;
+        }}
+        .header-label {{
+            font-size: 7.5pt;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #7aa8cc;
             margin-bottom: 4pt;
-            page-break-after: avoid;
         }}
-        h2 {{
-            font-size: 12pt;
-            color: #333;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 4pt;
-            margin-top: 16pt;
-            margin-bottom: 8pt;
-            page-break-after: avoid;
+        .header-address {{
+            font-size: 20pt;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 6pt;
         }}
-        h3 {{
-            font-size: 10pt;
-            color: #444;
-            margin-top: 12pt;
-            margin-bottom: 4pt;
-            page-break-after: avoid;
+        .header-meta {{
+            font-size: 8.5pt;
+            color: #aac4dd;
         }}
-        .subtitle {{
-            font-size: 11pt;
-            color: #666;
+        .header-links {{
+            margin-top: 10pt;
+            display: flex;
+            gap: 8pt;
+        }}
+        .header-link {{
+            display: inline-block;
+            padding: 5pt 12pt;
+            background: rgba(255,255,255,0.12);
+            color: white;
+            text-decoration: none;
+            border-radius: 3pt;
+            font-size: 8pt;
+            border: 1px solid rgba(255,255,255,0.25);
+        }}
+
+        /* STATS ROW */
+        .stats-row {{
+            display: flex;
+            border-bottom: 2px solid #e8edf2;
+        }}
+        .stat-box {{
+            flex: 1;
+            padding: 12pt 16pt;
+            border-right: 1px solid #e8edf2;
+        }}
+        .stat-box:last-child {{ border-right: none; }}
+        .stat-label {{
+            font-size: 7pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 3pt;
+        }}
+        .stat-value {{
+            font-size: 14pt;
+            font-weight: 700;
+            color: #0f2137;
+        }}
+
+        /* MAP */
+        .map-container {{
+            width: 100%;
+            max-height: 220pt;
+            overflow: hidden;
+            border-bottom: 2px solid #e8edf2;
+        }}
+        .map-image {{
+            width: 100%;
+            display: block;
+            object-fit: cover;
+            max-height: 220pt;
+        }}
+        .street-image {{
+            width: 100%;
+            display: block;
+            max-height: 180pt;
+            object-fit: cover;
+            border-bottom: 2px solid #e8edf2;
+        }}
+
+        /* CONTENT */
+        .content {{
+            padding: 18pt 30pt;
+        }}
+
+        /* TWO COLUMN */
+        .two-col {{
+            display: flex;
+            gap: 20pt;
             margin-bottom: 16pt;
         }}
-        .date-block {{
-            background: #f5f5f5;
-            padding: 8pt 12pt;
-            border-radius: 4pt;
-            margin: 12pt 0;
-            font-size: 9pt;
-            color: #666;
+        .col {{ flex: 1; }}
+
+        /* SECTIONS */
+        .section {{
+            margin-bottom: 16pt;
+            page-break-inside: avoid;
+        }}
+        h2 {{
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #0f2137;
+            border-bottom: 2px solid #0f2137;
+            padding-bottom: 4pt;
+            margin-bottom: 8pt;
         }}
         table {{
             width: 100%;
             border-collapse: collapse;
-            margin: 8pt 0;
-            font-size: 9pt;
-            page-break-inside: avoid;
-        }}
-        th, td {{
-            text-align: left;
-            padding: 6pt 8pt;
-            border-bottom: 1px solid #eee;
+            font-size: 8.5pt;
         }}
         th {{
-            background: #f8f8f8;
+            text-align: left;
+            padding: 5pt 8pt;
+            background: #f4f7fa;
+            color: #555;
             font-weight: 600;
-            width: 35%;
+            width: 42%;
+            border-bottom: 1px solid #e0e6ed;
         }}
-        tr:last-child td {{
-            border-bottom: 2px solid #ddd;
+        td {{
+            padding: 5pt 8pt;
+            border-bottom: 1px solid #e0e6ed;
+            color: #222;
         }}
-        .property-image {{
-            width: 100%;
-            max-height: 4in;
-            object-fit: contain;
-            margin: 8pt 0;
-            border: 1px solid #ddd;
-            border-radius: 4pt;
-        }}
-        .map-buttons {{
-            margin: 12pt 0;
-            text-align: center;
-        }}
-        .map-button {{
-            display: inline-block;
-            padding: 8pt 16pt;
-            margin: 0 4pt;
-            background: #4285f4;
-            color: white;
-            text-decoration: none;
-            border-radius: 4pt;
-            font-size: 9pt;
-        }}
-        .map-button.apple {{
-            background: #007aff;
-        }}
-        .section {{
-            page-break-inside: avoid;
-        }}
+        tr:last-child th, tr:last-child td {{ border-bottom: none; }}
+
+        /* VALUE HISTORY */
+        .value-table th {{ width: 30%; }}
+        .value-highlight td {{ font-weight: 700; color: #1a6b3c; }}
+
+        /* FOOTER */
         .footer {{
-            margin-top: 24pt;
-            padding-top: 12pt;
-            border-top: 1px solid #ddd;
-            font-size: 8pt;
-            color: #999;
+            margin-top: 18pt;
+            padding: 10pt 0 0;
+            border-top: 1px solid #dde3ea;
+            font-size: 7.5pt;
+            color: #aaa;
             text-align: center;
-        }}
-        ul {{
-            margin: 4pt 0;
-            padding-left: 16pt;
-        }}
-        li {{
-            margin: 2pt 0;
         }}
     </style>
 </head>
 <body>
-    <h1>Property Research Report</h1>
-    <p class="subtitle">{data.get('address', 'Unknown Address')}</p>
-    
-    <div class="section">
-        {images_html}
+
+    <div class="header">
+        <div class="header-label">Property Research Report</div>
+        <div class="header-address">{address}</div>
+        <div class="header-meta">Generated {today} &nbsp;·&nbsp; OpenClaw</div>
+        <div class="header-links">
+            <a href="{google_maps_url}" class="header-link">Google Maps</a>
+            <a href="{apple_maps_url}" class="header-link">Apple Maps</a>
+        </div>
     </div>
-    
-    <div class="map-buttons">
-        <a href="{google_maps_url}" class="map-button">Open in Google Maps</a>
-        <a href="{apple_maps_url}" class="map-button apple">Open in Apple Maps</a>
-    </div>
-    
-    <div class="date-block">
-        Report Generated: {today}
-    </div>
-    
-    <h2>Property Details</h2>
-    <table>
-        <tr><th>TCAD PropID</th><td>{data.get('prop_id', 'N/A')}</td></tr>
-        <tr><th>Legal Description</th><td>{data.get('legal_desc', 'N/A')}</td></tr>
-        <tr><th>Geographic ID</th><td>{data.get('geo_id', 'N/A')}</td></tr>
-    </table>
-    
-    <h2>Owner Information</h2>
-    <table>
-        <tr><th>Primary Owner</th><td>{data.get('owner1_name', 'N/A')}</td></tr>
-        <tr><th>Mailing Address</th><td>{data.get('mailing_address', 'N/A')}</td></tr>
-        <tr><th>Secondary Owner</th><td>{data.get('owner2_name', 'N/A')}</td></tr>
-    </table>
-    
-    <h2>Property Characteristics</h2>
-    <table>
-        <tr><th>Year Built</th><td>{data.get('year_built', 'N/A')}</td></tr>
-        <tr><th>Square Footage</th><td>{data.get('sqft', 'N/A')}</td></tr>
-        <tr><th>Lot Size</th><td>{data.get('lot_size', 'N/A')}</td></tr>
-        <tr><th>Bedrooms</th><td>{data.get('bedrooms', 'N/A')}</td></tr>
-        <tr><th>Bathrooms</th><td>{data.get('bathrooms', 'N/A')}</td></tr>
-    </table>
-    
-    <h2>Appraisal Values (2025)</h2>
-    <table>
-        <tr><th>Land Value</th><td>{data.get('land_value', 'N/A')}</td></tr>
-        <tr><th>Improvement Value</th><td>{data.get('improvement_value', 'N/A')}</td></tr>
-        <tr><th>Total Appraised Value</th><td><strong>{data.get('total_value', 'N/A')}</strong></td></tr>
-    </table>
-    
-    <h2>Value History</h2>
-    <table>
-        <tr><th>2024 Appraised</th><td>{data.get('value_2024', 'N/A')}</td></tr>
-        <tr><th>2023 Appraised</th><td>{data.get('value_2023', 'N/A')}</td></tr>
-        <tr><th>2022 Appraised</th><td>{data.get('value_2022', 'N/A')}</td></tr>
-    </table>
-    
-    <h2>Deed History</h2>
-    <table>
-        <tr><th>Latest Instrument</th><td>{data.get('deed_instrument', 'N/A')}</td></tr>
-        <tr><th>Deed Type</th><td>{data.get('deed_type', 'N/A')}</td></tr>
-        <tr><th>Recording Date</th><td>{data.get('deed_date', 'N/A')}</td></tr>
-        <tr><th>Previous Owner</th><td>{data.get('previous_owner', 'N/A')}</td></tr>
-    </table>
-    
-    <h2>Comparable Properties</h2>
-    <p><em>See Comps_Analysis.md in Google Drive folder for detailed comparable property analysis.</em></p>
-    
-    <h2>Sources</h2>
-    <ul>
-        <li>Travis Central Appraisal District (TCAD) - travis.prodigycad.com</li>
-        <li>Travis County Clerk - tccsearch.org</li>
-        <li>Google Maps Street View</li>
-    </ul>
-    
-    <h2>Notes</h2>
-    <p>{data.get('notes', 'Add research notes here...')}</p>
-    
-    <div class="footer">
-        Generated by Property Research Skill · OpenClaw
+
+    {"<div class='stats-row'>" + stats_html + "</div>" if stats_html else ""}
+
+    {"<div class='map-container'>" + map_html + "</div>" if map_html else ""}
+    {street_html}
+
+    <div class="content">
+
+        <div class="two-col">
+            {"<div class='col'><div class='section'><h2>Owner Information</h2><table>" + owner_rows + "</table></div></div>" if owner_rows else ""}
+            {"<div class='col'><div class='section'><h2>Property Details</h2><table>" + detail_rows + "</table></div></div>" if detail_rows else ""}
+        </div>
+
+        {"<div class='section'><h2>Property Characteristics</h2><table>" + char_rows + "</table></div>" if char_rows else ""}
+
+        {"<div class='section'><h2>Appraisal Values (2025)</h2><table>" + appr_rows + "</table></div>" if appr_rows else ""}
+
+        {"<div class='section'><h2>Value History</h2><table class='value-table'>" + value_history_rows + "</table></div>" if value_history_rows else ""}
+
+        {"<div class='section'><h2>Deed History</h2><table>" + deed_rows + "</table></div>" if deed_rows else ""}
+
+        <div class="section">
+            <h2>Comparable Properties</h2>
+            <p style="color:#555; font-size:8.5pt">See <em>Comps_Analysis.md</em> in Google Drive folder for detailed comparable property analysis.</p>
+        </div>
+
+        {('<div class="section"><h2>Notes</h2><p style="color:#555;font-size:8.5pt">' + data['notes'] + '</p></div>') if data.get('notes') else ''}
+
+        <div class="footer">
+            Generated by Property Research Skill &nbsp;·&nbsp; OpenClaw &nbsp;·&nbsp; {today}
+        </div>
+
     </div>
 </body>
 </html>"""
-    
+
     return html
+
 
 def main():
     parser = argparse.ArgumentParser(description='Generate property research PDF report')
-    parser.add_argument('--address', '-a', required=True, help='Property address')
-    parser.add_argument('--prop-id', '-p', help='TCAD PropID')
-    parser.add_argument('--owner1', '-o1', help='Primary owner name')
-    parser.add_argument('--owner2', '-o2', help='Secondary owner name')
-    parser.add_argument('--mailing-address', '-m', help='Owner mailing address')
-    parser.add_argument('--year', '-y', help='Year built')
-    parser.add_argument('--sqft', '-s', help='Square footage')
-    parser.add_argument('--lot-size', '-l', help='Lot size')
-    parser.add_argument('--bedrooms', '-b', help='Bedrooms')
-    parser.add_argument('--bathrooms', '-ba', help='Bathrooms')
-    parser.add_argument('--land-value', help='Land value')
-    parser.add_argument('--improvement-value', help='Improvement value')
-    parser.add_argument('--total-value', '-v', help='Total appraised value')
-    parser.add_argument('--street-view', help='Path to street view image')
-    parser.add_argument('--map-view', help='Path to map view image')
-    parser.add_argument('--output', '-o', required=True, help='Output PDF path')
-    
+    parser.add_argument('--address', '-a', required=True)
+    parser.add_argument('--prop-id', '-p')
+    parser.add_argument('--owner1')
+    parser.add_argument('--owner2')
+    parser.add_argument('--mailing-address', '-m')
+    parser.add_argument('--legal-desc')
+    parser.add_argument('--geo-id')
+    parser.add_argument('--subdivision')
+    parser.add_argument('--neighborhood')
+    parser.add_argument('--prop-type')
+    parser.add_argument('--year')
+    parser.add_argument('--sqft')
+    parser.add_argument('--lot-size')
+    parser.add_argument('--bedrooms')
+    parser.add_argument('--bathrooms')
+    parser.add_argument('--land-value')
+    parser.add_argument('--improvement-value')
+    parser.add_argument('--total-value', '-v')
+    parser.add_argument('--value-2024')
+    parser.add_argument('--value-2023')
+    parser.add_argument('--value-2022')
+    parser.add_argument('--deed-instrument')
+    parser.add_argument('--deed-type')
+    parser.add_argument('--deed-date')
+    parser.add_argument('--previous-owner')
+    parser.add_argument('--notes')
+    parser.add_argument('--street-view')
+    parser.add_argument('--map-view')
+    parser.add_argument('--output', '-o', required=True)
+
     args = parser.parse_args()
-    
-    # Build data dict
+
     data = {
         'address': args.address,
         'prop_id': args.prop_id,
         'owner1_name': args.owner1,
         'owner2_name': args.owner2,
         'mailing_address': args.mailing_address,
+        'legal_desc': args.legal_desc,
+        'geo_id': args.geo_id,
+        'subdivision': args.subdivision,
+        'neighborhood': args.neighborhood,
+        'prop_type': args.prop_type,
         'year_built': args.year,
         'sqft': args.sqft,
         'lot_size': args.lot_size,
@@ -281,18 +388,23 @@ def main():
         'land_value': args.land_value,
         'improvement_value': args.improvement_value,
         'total_value': args.total_value,
+        'value_2024': args.value_2024,
+        'value_2023': args.value_2023,
+        'value_2022': args.value_2022,
+        'deed_instrument': args.deed_instrument,
+        'deed_type': args.deed_type,
+        'deed_date': args.deed_date,
+        'previous_owner': args.previous_owner,
+        'notes': args.notes,
     }
-    
-    # Convert images to base64
-    street_view_b64 = image_to_base64(args.street_view) if args.street_view else None
-    map_view_b64 = image_to_base64(args.map_view) if args.map_view else None
-    
-    # Generate HTML
-    html_content = generate_html_report(data, street_view_b64, map_view_b64)
-    
-    # Write PDF
+
+    map_view = image_to_base64(args.map_view) if args.map_view else None
+    street_view = image_to_base64(args.street_view) if args.street_view else None
+
+    html_content = generate_html_report(data, map_view, street_view)
     HTML(string=html_content).write_pdf(args.output)
     print(f"PDF generated: {args.output}")
+
 
 if __name__ == '__main__':
     main()
