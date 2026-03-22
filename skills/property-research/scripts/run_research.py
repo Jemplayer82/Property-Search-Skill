@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Full property research runner — TCAD + Deed search + Comps in one shot.
+Full property research runner — TCAD + Deed search + Comps + Images in one shot.
 Usage: python3 run_research.py "3524 Winding Shore Lane" --drive-parent <id>
        python3 run_research.py "3524 Winding Shore Lane" --drive-folder <id>
 
@@ -9,6 +9,8 @@ Runs:
   2. deed_search.py   → Deed of Trust + Warranty Deed PDFs → Drive
   3. comps.py         → Comps report → Drive
   4. owner_lookup.py  → Owner contact info → Drive
+  5. fetch_images.py  → Google Maps images (API) → Drive
+  6. generate_report.py → Final PDF report with images → Drive
 
 If --drive-parent is given, a subfolder named after the address is auto-created.
 If --drive-folder is given, files are uploaded directly to that folder.
@@ -138,6 +140,22 @@ def main():
                               "--drive-folder", args.drive_folder,
                               "--out-dir", work_dir]
                 results["owner"] = run("owner_lookup.py", owner_args)
+
+        # Fetch Google Maps images using API
+        print("\n[5/6] Fetching Google Maps images...")
+        image_args = [args.address, "--output-dir", work_dir]
+        results["images"] = run("fetch_images.py", image_args)
+
+        # Generate final PDF report with images
+        print("\n[6/6] Generating final PDF report...")
+        report_args = [args.address,
+                       "--drive-folder", args.drive_folder,
+                       "--out-dir", work_dir,
+                       "--map-view", os.path.join(work_dir, f"{slug}_Map.png"),
+                       "--street-view", os.path.join(work_dir, f"{slug}_Street.png")]
+        if args.pid:
+            report_args += ["--prop-id", args.pid]
+        results["report"] = run("generate_report.py", report_args)
 
     finally:
         # Clean up working directory regardless of success/failure

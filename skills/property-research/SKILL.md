@@ -33,6 +33,18 @@ python3 ... --skip-comps --skip-deeds
 python3 ... --pid 123456
 ```
 
+### Google Maps API Setup
+
+To enable automatic map/street view image fetching (Step 5), add your API key to `.api-config`:
+
+```bash
+echo "GOOGLE_MAPS_API_KEY=your_actual_key_here" > ~/.openclaw/workspace/skills/property-research/.api-config
+```
+
+Or set as environment variable: `export GOOGLE_MAPS_API_KEY="your_key"`
+
+---
+
 `run_research.py` does a **pre-flight site check** on all target websites before starting any work. If a site is down or in maintenance it skips that step cleanly instead of hammering it.
 
 ---
@@ -45,7 +57,22 @@ python3 ... --pid 123456
 | 2. Deed search | `deed_search.py` | Pulls Deed of Trust + Warranty Deed PDFs from tccsearch.org → Drive |
 | 3. Comps | `comps.py` | Pulls comparable properties from TCAD by subdivision → markdown report → Drive |
 | 4. Owner contact | `owner_lookup.py` | SearXNG + public records scrape for phone/email → markdown report → Drive |
-| 5. PDF report | `generate_report.py` | Generates a formatted property research PDF with maps, stats, comps table → Drive |
+| 5. Fetch images | `fetch_images.py` | Downloads map + street view images from Google Maps API → Drive |
+| 6. PDF report | `generate_report.py` | Generates a formatted property research PDF with images, stats, comps table → Drive |
+
+---
+
+### Google Maps API Setup
+
+To enable automatic map/street view image fetching (Step 5), add your API key to `.api-config`:
+
+```bash
+echo "GOOGLE_MAPS_API_KEY=your_actual_key_here" > ~/.openclaw/workspace/skills/property-research/.api-config
+```
+
+Or set as environment variable: `export GOOGLE_MAPS_API_KEY="your_key"`
+
+---
 
 ---
 
@@ -68,7 +95,25 @@ Options:
   --skip-deeds          Skip deed search
   --skip-comps          Skip comps analysis
   --skip-owner          Skip owner contact lookup
+
 ```
+
+### `fetch_images.py` — Google Maps Image Fetcher
+
+Fetches Google Maps images (map view + street view) using Google Maps API.
+
+```bash
+python3 fetch_images.py "1234 Main St, Austin, TX 78701" \
+  --output-dir /tmp --map-size 1200x800 --street-size 1200x800
+```
+
+**API Key:** Set `GOOGLE_MAPS_API_KEY` in `.api-config` file or environment variable.
+
+**Output files:**
+- `{address}_Map.png` - Static map image
+- `{address}_Street.png` - Street view image
+
+**Requires:** Google Maps Static API and Street View Image API enabled
 
 ### `tcad_lookup.py` — Travis CAD Property Data
 
