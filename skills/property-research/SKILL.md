@@ -1,12 +1,12 @@
 ---
 name: property-research
 version: 2.0.0
-description: Research Texas property ownership, appraisal values, deed history, comparable sales, and owner contact info. Runs a full automated pipeline — CAD lookup, deed search, comps analysis, owner contact lookup, and a formatted PDF report — all uploaded to Google Drive. Supports Travis County (TCAD), Hays County (Hays CAD), and Williamson County (WCAD). Use when the user asks about a property address, wants property details, owner contact info, or a Drive research folder.
+description: Research property ownership, appraisal values, deed history, comparable sales, and owner contact info. Runs a full automated pipeline — CAD lookup, deed search, comps analysis, owner contact lookup, and a formatted PDF report — all uploaded to Google Drive. Use when the user asks about a property address, wants property details, owner contact info, or a Drive research folder.
 ---
 
 # Property Research Skill
 
-Automated pipeline for Texas real estate research. One command pulls CAD appraisal data, deed history, comparable properties, and owner contact info — and generates a formatted PDF report — all organized into a Google Drive folder.
+Automated pipeline for real estate research. One command pulls CAD appraisal data, deed history, comparable properties, and owner contact info — and generates a formatted PDF report — all organized into a Google Drive folder.
 
 ---
 
@@ -15,22 +15,22 @@ Automated pipeline for Texas real estate research. One command pulls CAD apprais
 ```bash
 # Full run — auto-creates Drive subfolder under a parent
 python3 ~/.openclaw/workspace/skills/property-research/scripts/run_research.py \
-  "3524 Winding Shore Lane, Pflugerville TX" \
+  "1234 Main St, Austin TX 78701" \
   --drive-parent <parent_folder_id> \
-  --owner "Ferguson Landon Jennifer"
+  --owner "Smith John Jane"
 
 # Full run — into an existing Drive folder
 python3 ~/.openclaw/workspace/skills/property-research/scripts/run_research.py \
-  "360 Purple Martin Ave, Kyle TX 78640" \
+  "1234 Main St, Austin TX 78701" \
   --drive-folder <folder_id> \
-  --owner "Ferguson Landon Jennifer" \
-  --subdivision "Meadows at Kyle Phase Two"
+  --owner "Smith John Jane" \
+  --subdivision "Example Subdivision"
 
 # Skip steps you don't need
 python3 ... --skip-comps --skip-deeds
 
 # Already know the CAD ID — skip the search step
-python3 ... --pid 550733
+python3 ... --pid 123456
 ```
 
 `run_research.py` does a **pre-flight site check** on all target websites before starting any work. If a site is down or in maintenance it skips that step cleanly instead of hammering it.
@@ -75,7 +75,7 @@ Options:
 Searches `travis.prodigycad.com` for a property by address or PID. Uses CDP browser automation to render the JavaScript SPA, then prints the full detail page to PDF.
 
 ```bash
-python3 tcad_lookup.py "3524 Winding Shore Lane" \
+python3 tcad_lookup.py "1234 Main St" \
   --drive-folder <id> --out-dir /tmp
 ```
 
@@ -86,7 +86,7 @@ python3 tcad_lookup.py "3524 Winding Shore Lane" \
 Searches `tccsearch.org` for deed documents by street address. Downloads Deed of Trust and Warranty Deed PDFs.
 
 ```bash
-python3 deed_search.py "3524 Winding Shore" \
+python3 deed_search.py "1234 Main" \
   --drive-folder <id> --out-dir /tmp
 ```
 
@@ -98,8 +98,8 @@ Searches TCAD by subdivision, scrapes comparable properties, outputs a markdown 
 
 ```bash
 python3 comps.py \
-  --subdivision "Park at Blackhawk" \
-  --subject-pid 550733 \
+  --subdivision "Example Subdivision" \
+  --subject-pid 123456 \
   --drive-folder <id> --out-dir /tmp
 ```
 
@@ -108,7 +108,7 @@ python3 comps.py \
 Searches SearXNG (local instance at `http://192.168.7.17:8888`) for owner contact info via public records people-search sites.
 
 ```bash
-python3 owner_lookup.py "Ferguson Landon Jennifer" "3524 Winding Shore Lane, Pflugerville TX" \
+python3 owner_lookup.py "Smith John Jane" "1234 Main St, Austin TX 78701" \
   --drive-folder <id> --out-dir /tmp
 ```
 
@@ -120,26 +120,26 @@ Generates a formatted property research PDF using WeasyPrint. Includes Google/Ap
 
 ```bash
 python3 generate_report.py \
-  --address "360 Purple Martin Ave, Kyle, TX 78640" \
-  --prop-id R142280 \
-  --owner1 "Landon S Ferguson" \
-  --owner2 "Jennifer M Ferguson" \
-  --mailing-address "9600 Escarpment Blvd Ste 745, Austin, TX 78749" \
-  --year 2015 \
-  --sqft 1500 \
-  --land-value '$69,380' \
-  --improvement-value '$199,790' \
-  --total-value '$269,170' \
-  --value-2024 '$303,120' \
-  --value-2023 '$333,560' \
-  --deed-instrument 2021221583 \
+  --address "1234 Main St, Austin, TX 78701" \
+  --prop-id R000000 \
+  --owner1 "John Smith" \
+  --owner2 "Jane Smith" \
+  --mailing-address "1234 Main St, Austin, TX 78701" \
+  --year 2010 \
+  --sqft 1800 \
+  --land-value '$50,000' \
+  --improvement-value '$200,000' \
+  --total-value '$250,000' \
+  --value-2024 '$260,000' \
+  --value-2023 '$255,000' \
+  --deed-instrument 2020000000 \
   --deed-type "Warranty Deed" \
-  --deed-date "2021-08-15" \
+  --deed-date "2020-01-01" \
   --previous-owner "Prior Owner Name" \
-  --subdivision "Meadows at Kyle Phase Two" \
-  --neighborhood "MEAK" \
+  --subdivision "Example Subdivision" \
+  --neighborhood "EXMP" \
   --prop-type "Residential" \
-  --legal-desc "Lot 14, Block 3" \
+  --legal-desc "Lot 1, Block 1" \
   --map-view /tmp/map.jpg \
   --street-view /tmp/street.jpg \
   --comps-file /tmp/comps.json \
@@ -152,20 +152,20 @@ python3 generate_report.py \
 {
   "comps": [
     {
-      "address": "261 Purple Martin Ave",
-      "cad_id": "R140221",
-      "value": "$265,611",
-      "diff": "-$3,559",
-      "diff_pct": "-1.3%",
-      "notes": "Same street, very close in value"
+      "address": "5678 Example Rd",
+      "cad_id": "R000001",
+      "value": "$250,000",
+      "diff": "-$5,000",
+      "diff_pct": "-2.0%",
+      "notes": "Similar size and age"
     }
   ],
   "summary": {
-    "avg": "$289,554",
-    "high": "$337,288",
-    "low": "$265,611",
-    "median": "$281,890",
-    "variance": "-$20,384 (-7.0%)"
+    "avg": "$255,000",
+    "high": "$270,000",
+    "low": "$240,000",
+    "median": "$252,000",
+    "variance": "-$5,000 (-2.0%)"
   }
 }
 ```
