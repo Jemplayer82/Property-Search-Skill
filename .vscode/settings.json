@@ -1,0 +1,59 @@
+{
+  "editor.formatOnSave": true,
+  "editor.rulers": [80, 120],
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true
+  },
+  "search.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/__pycache__": true
+  },
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "git.autofetch": true,
+  "python.defaultInterpreterPath": "/usr/bin/python3",
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.autoImportCompletions": true,
+  "python.formatting.provider": "black",
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.linting.flake8Enabled": true,
+  "[python]": {
+    "editor.tabSize": 4,
+    "editor.rulers": [88, 120],
+    "editor.defaultFormatter": "ms-python.python"
+  },
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.quickSuggestions": {
+      "comments": "off",
+      "strings": "off",
+      "other": "off"
+    }
+  },
+  "markdown.preview.doubleClickToSwitchToEditor": false,
+  "markdown.extension.toc.levels": "2-6",
+  "markdown.extension.toc.updateOnSave": true,
+  "files.associations": {
+    "*.md": "markdown",
+    "SKILL.md": "markdown",
+    "*.py": "python",
+    "*.json": "json",
+    "*.yaml": "yaml",
+    "*.yml": "yaml"
+  },
+  "terminal.integrated.cwd": "${workspaceFolder}",
+  "workbench.tree.indent": 20,
+  "workbench.editor.enablePreview": false
+}

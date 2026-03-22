@@ -1,0 +1,16 @@
+{
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.debugpy",
+    "yzhang.markdown-all-in-one",
+    "eamodio.gitlens",
+    "github.vscode-github-actions",
+    "ms-vscode.vscode-json",
+    "redhat.vscode-yaml",
+    "tamasfe.even-better-toml",
+    "njpwerner.autodocstring",
+    "kevinrose.vsc-python-indent",
+    "ms-vsliveshare.vsliveshare"
+  ],
+  "unwantedRecommendations": []
+}

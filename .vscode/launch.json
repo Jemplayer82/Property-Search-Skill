@@ -1,0 +1,50 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Python: Owner Contact Script",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/skills/property-research/scripts/owner_contact.py",
+      "args": [
+        "Landon Ferguson",
+        "--address",
+        "360 Purple Martin Ave, Kyle, TX",
+        "--prop-id",
+        "R142280",
+        "--output",
+        "owner_test.md"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Python: Generate Report",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/skills/property-research/scripts/generate_report.py",
+      "args": [
+        "--address",
+        "360 Purple Martin Ave, Kyle, TX",
+        "--prop-id",
+        "R142280",
+        "--owner1",
+        "Landon Ferguson",
+        "--total-value",
+        "$269,170",
+        "--output",
+        "test_report.pdf"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
+}
