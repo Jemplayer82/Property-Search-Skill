@@ -1,0 +1,21 @@
+# Generated property research output — local only, pushed to Google Drive not GitHub
+# PDFs, images, and reports produced during research runs
+skills/property-research/*.pdf
+skills/property-research/*.png
+skills/property-research/*.jpg
+skills/property-research/*.md
+# Keep SKILL.md and references
+!skills/property-research/SKILL.md
+!skills/property-research/references/
+!skills/property-research/references/**
+
+# Temp working files from research runs
+property-research/
+/tmp/openclaw_*/
+
+# HTML debug/scratch files
+*.html
+*.htm
+
+# Scrapling venv
+skills/scrapling/.venv/
