@@ -99,6 +99,37 @@ def fetch_lunch_menu(school_slug="rowelaneelementaryschool", date_str=None):
             except Exception as e:
                 print(f"Date selection issue: {e}", file=sys.stderr)
             
+            # Switch from Breakfast to Lunch in the MEAL dropdown
+            print("Switching to Lunch...", file=sys.stderr)
+            try:
+                # The MEAL field is a react-select dropdown
+                # First, click on the meal dropdown to open it
+                meal_dropdown = page.locator('#aria-meal-input').first
+                if meal_dropdown.count() > 0:
+                    # Click the dropdown container to open options
+                    dropdown_container = page.locator('[id="aria-meal-input"]').locator('xpath=../..').first
+                    dropdown_container.click()
+                    page.wait_for_timeout(1000)
+                    
+                    # Look for "Lunch" option in the dropdown
+                    lunch_option = page.get_by_text("Lunch", exact=True).first
+                    if lunch_option.count() > 0:
+                        lunch_option.click(force=True)
+                        print("Selected Lunch from dropdown", file=sys.stderr)
+                        page.wait_for_timeout(1000)
+                    else:
+                        # Try searching for it
+                        meal_dropdown.fill("Lunch")
+                        page.wait_for_timeout(500)
+                        lunch_option = page.get_by_text("Lunch", exact=True).first
+                        if lunch_option.count() > 0:
+                            lunch_option.click(force=True)
+                            page.wait_for_timeout(1000)
+                else:
+                    print("Meal dropdown not found", file=sys.stderr)
+            except Exception as e:
+                print(f"Meal switch issue: {e}", file=sys.stderr)
+            
             # Click Done button
             print("Clicking Done...", file=sys.stderr)
             try:
@@ -171,15 +202,54 @@ def fetch_lunch_menu(school_slug="rowelaneelementaryschool", date_str=None):
         }
 
 
+def get_next_school_day(date_str):
+    """
+    Get the next school day (skips weekends, but not holidays).
+    Returns the date string of the next school day.
+    """
+    date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+    weekday = date_obj.weekday()  # 0=Monday, 6=Sunday
+    
+    # If it's Saturday (5), next school day is Monday
+    if weekday == 5:
+        next_day = date_obj + timedelta(days=2)
+        return next_day.strftime("%Y-%m-%d")
+    # If it's Sunday (6), next school day is tomorrow (Monday)
+    elif weekday == 6:
+        next_day = date_obj + timedelta(days=1)
+        return next_day.strftime("%Y-%m-%d")
+    else:
+        # It's a weekday, just return the same date
+        return date_str
+
+
+def is_weekend(date_str):
+    """Check if the given date is a weekend."""
+    date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+    return date_obj.weekday() >= 5  # Saturday=5, Sunday=6
+
+
 def main():
     school = sys.argv[1] if len(sys.argv) > 1 else "rowelaneelementaryschool"
     date_str = sys.argv[2] if len(sys.argv) > 2 else None
+    skip_weekends = sys.argv[3] if len(sys.argv) > 3 else "false"
+    
+    # If no date specified, use today
+    if date_str is None:
+        date_str = datetime.now().strftime("%Y-%m-%d")
     
     # If user types "tomorrow", calculate tomorrow's date
     if date_str == "tomorrow":
         tomorrow = datetime.now() + timedelta(days=1)
         date_str = tomorrow.strftime("%Y-%m-%d")
         print(f"Fetching menu for tomorrow: {date_str}", file=sys.stderr)
+    
+    # Handle weekend skipping mode
+    if skip_weekends.lower() == "true" or skip_weekends.lower() == "skip":
+        original_date = date_str
+        date_str = get_next_school_day(date_str)
+        if original_date != date_str:
+            print(f"Weekend detected ({original_date}), fetching next school day instead: {date_str}", file=sys.stderr)
     
     result = fetch_lunch_menu(school, date_str)
     print(json.dumps(result, indent=2))

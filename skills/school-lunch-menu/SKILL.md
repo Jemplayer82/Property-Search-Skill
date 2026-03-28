@@ -9,7 +9,7 @@ Fetch lunch menus from SchoolDish for PfISD schools. Supports today's menu, tomo
 
 ## Important Note
 
-**Lunch vs Breakfast:** The SchoolDish page defaults to showing **breakfast** early in the day. The script attempts to switch to lunch, but if the lunch menu hasn't been posted yet, it will show breakfast items. This is normal — lunch menus are typically posted later in the morning.
+**Lunch vs Breakfast:** The script automatically switches the **MEAL** dropdown from "Breakfast" to "Lunch" when fetching menus. However, if the lunch menu hasn't been posted yet for a given date, the site may still show breakfast items. This is normal — lunch menus are typically posted later in the morning.
 
 ## Supported Schools
 
@@ -118,7 +118,16 @@ Typical menu sections:
 
 - Uses Playwright to navigate SchoolDish website
 - Supports date selection via calendar picker
-- Attempts to switch from breakfast to lunch via UI interaction
+- Automatically switches MEAL dropdown from "Breakfast" to "Lunch" via UI interaction
 - Falls back to showing available menu if lunch isn't posted yet
-- Filters out breakfast-specific items (cereal, bacon, eggs, etc.) when possible
 - Supports all PfISD schools that use SchoolDish platform
+
+## How It Works
+
+The script performs these steps:
+1. Navigates to the school's SchoolDish page
+2. Clicks "Change" to open the date/meal selector
+3. Opens the calendar and selects the target date
+4. **Switches the MEAL dropdown from "Breakfast" to "Lunch"** (this was the missing step!)
+5. Clicks "Done" to apply changes
+6. Extracts menu items grouped by category (Entree, Vegetable, Fruit, etc.)

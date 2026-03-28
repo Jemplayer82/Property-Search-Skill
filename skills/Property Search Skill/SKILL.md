@@ -1,5 +1,5 @@
 ---
-name: property-search
+name: Property Search Skill
 description: Integration with the Property Search Flask app for MLS listings via HomeHarvest. Create client cards with filters, run searches, and get notified of new listings. Supports location-based filtering with distance radius, price ranges, beds/baths, property types, and age filters.
 ---
 
