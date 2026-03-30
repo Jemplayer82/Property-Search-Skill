@@ -103,20 +103,20 @@ python3 scripts/client_manager.py quick-search \
 ```json
 {
   "id": "8c5c0b89-6cd5-433b-a1fc-a740248568fb",
-  "first_name": "Landon",
-  "last_name": "Ferguson",
-  "email": "landon@txferguson.net",
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john.doe@example.com",
   "email_frequency": "once_weekly",
   "filters": {
-    "location": "3524 winding shore ln",
-    "distance": 0,
+    "location": "Austin, TX",
+    "distance": 10,
     "min_price": 250000,
     "max_price": 500000,
-    "min_beds": 0,
-    "min_baths": 0,
+    "min_beds": 3,
+    "min_baths": 2,
     "property_types": ["house"],
     "status": "for sale",
-    "min_sqft": 3000,
+    "min_sqft": 2000,
     "max_age": 10
   }
 }

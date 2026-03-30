@@ -15,7 +15,7 @@ from pathlib import Path
 import requests
 
 BASE_URL = "http://localhost:5050"
-CLIENTS_FILE = Path("/home/landon/property-search/clients.json")
+CLIENTS_FILE = Path.home() / "property-search" / "clients.json"
 
 
 def load_clients():
