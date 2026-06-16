@@ -1,22 +1,26 @@
-# OpenClaw Skills
+<img src="assets/fathom-header-banner.svg" alt="Fathom Works — property-search-skill" width="100%">
 
-A collection of custom agent skills for [OpenClaw](https://github.com/openclaw/openclaw) — an open-source AI agent runtime. These skills extend Claude with real-world integrations for property research, web scraping, daily utilities, and more.
+# `$ property-search-skill`
 
-## Skills Included
+**A collection of custom agent skills for [OpenClaw](https://github.com/openclaw/openclaw)** — an open-source AI agent runtime. These skills extend Claude with real-world integrations for property research, web scraping, daily utilities, and more.
 
-### Property Research
+---
+
+## `[ skills included ]`
+
+### property research
 
 **Property Search Skill** — MLS listing search powered by HomeHarvest (Redfin / Zillow / Realtor.com). Create client cards with saved filters, run automated searches, and send email notifications for new listings. Integrates with the [Property Search](https://github.com/jemplayer82/Property-Search) Flask app running locally.
 
 **Property Research** — Full property research workflow using BatchData API, TCAD scraping, deed lookups, and PDF report generation via Google Drive.
 
-### Web & Screen
+### web & screen
 
 **Scrapling** — Web scraping with anti-bot bypass using the [Scrapling](https://github.com/D4Vinci/Scrapling) library. Includes static, dynamic, and stealthy fetch modes with spider support.
 
 **Screen Monitor** — Screen capture and analysis tool. Shares and analyzes your screen through a web endpoint.
 
-### Daily Utilities
+### daily utilities
 
 **School Lunch Menu** — Fetches daily cafeteria menus from SchoolDish for Pflugerville ISD schools. Runs automatically at 5am with delivery via WhatsApp or email.
 
@@ -24,18 +28,20 @@ A collection of custom agent skills for [OpenClaw](https://github.com/openclaw/o
 
 **Online Shopping** — Browsing assistant for online stores with saved preferences and site lists.
 
-## Repository Structure
+---
+
+## `[ repository structure ]`
 
 ```
 skills/
 ├── Property Search Skill/
-│   ├── SKILL.md          # Usage and API documentation
+│   ├── SKILL.md                   # Usage and API documentation
 │   └── scripts/
-│       └── client_manager.py   # CLI for managing clients and running searches
+│       └── client_manager.py      # CLI for managing clients and running searches
 ├── scrapling/
 │   ├── SKILL.md
-│   ├── examples/         # Fetch and spider examples
-│   └── references/       # Detailed usage guides
+│   ├── examples/                  # Fetch and spider examples
+│   └── references/                # Detailed usage guides
 ├── screen-monitor/
 │   ├── SKILL.md
 │   └── web/
@@ -50,14 +56,16 @@ skills/
     └── scripts/
 ```
 
-## Property Search Skill — Quick Reference
+---
+
+## `[ property search skill — quick reference ]`
 
 This skill connects to the Property Search Flask app at `http://localhost:5050`.
 
-### Create a Client
+### create a client
 
 ```bash
-python3 skills/Property\ Search\ Skill/scripts/client_manager.py create \
+$ python3 skills/Property\ Search\ Skill/scripts/client_manager.py create \
   --first-name "Jane" \
   --last-name "Smith" \
   --email "jane@example.com" \
@@ -72,14 +80,14 @@ python3 skills/Property\ Search\ Skill/scripts/client_manager.py create \
   --email-frequency once_daily
 ```
 
-### Run a Search
+### run a search
 
 ```bash
 # Search for a specific client
-python3 skills/Property\ Search\ Skill/scripts/client_manager.py search --client-id <CLIENT_ID>
+$ python3 skills/Property\ Search\ Skill/scripts/client_manager.py search --client-id <CLIENT_ID>
 
 # Quick one-off search without saving a client
-python3 skills/Property\ Search\ Skill/scripts/client_manager.py quick-search \
+$ python3 skills/Property\ Search\ Skill/scripts/client_manager.py quick-search \
   --location "78660" \
   --distance 5 \
   --min-price 250000 \
@@ -87,13 +95,13 @@ python3 skills/Property\ Search\ Skill/scripts/client_manager.py quick-search \
   --min-beds 3
 ```
 
-### Email a Client Their Listings
+### email a client their listings
 
 ```bash
-python3 skills/Property\ Search\ Skill/scripts/client_manager.py email --client-id <CLIENT_ID>
+$ python3 skills/Property\ Search\ Skill/scripts/client_manager.py email --client-id <CLIENT_ID>
 ```
 
-### Email Frequency Options
+### email frequency options
 
 | Option | Behavior |
 |--------|----------|
@@ -102,14 +110,22 @@ python3 skills/Property\ Search\ Skill/scripts/client_manager.py email --client-
 | `once_weekly` | Send a digest at most once per 7 days |
 | `never` | No automatic emails |
 
-## Installing a Skill in OpenClaw
+---
+
+## `[ installing a skill in openclaw ]`
 
 ```
 /openclaw skills install https://github.com/jemplayer82/Property-Search-Skill/tree/main/skills/SKILL-NAME
 ```
 
-## Requirements
+---
+
+## `[ requirements ]`
 
 - [OpenClaw](https://github.com/openclaw/openclaw) installed and configured
 - For Property Search Skill: the [Property Search](https://github.com/jemplayer82/Property-Search) app running at `localhost:5050`
 - For School Lunch Menu: SMTP or WhatsApp credentials configured in OpenClaw
+
+---
+
+<img src="assets/fathom-footer-banner.svg" alt="Fathom Works — sound the depths before you set a course" width="100%">
